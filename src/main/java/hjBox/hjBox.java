@@ -44,6 +44,7 @@ import java.io.InputStream;
 import crypto.*;
 
 public class hjBox {
+    // TODO: Vai passar a ter config.properties e boxCryptoConfig
     public static void main(String[] args) throws Exception {
         InputStream inputStream = new FileInputStream("src/main/java/hjBox/config.properties");
         if (inputStream == null) {
@@ -69,10 +70,10 @@ public class hjBox {
  	        inSocket.receive(inPacket);  // if remote is unicast
 
             System.out.print("*");
+            // TODO: Verificar a integridade do packet, se não estiver bem descarta-se e não se envia
             try {
                 decryptBuffer = CryptoStuff.decrypt(key, buffer);
             } catch (Exception e) {
-                System.out.println(e.getMessage());
                 e.printStackTrace();
             }
             for (SocketAddress outSocketAddress : outSocketAddressSet)

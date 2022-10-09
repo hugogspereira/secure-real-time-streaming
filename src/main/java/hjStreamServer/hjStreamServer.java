@@ -18,7 +18,7 @@ import crypto.CryptoStuff;
 import crypto.KeyRing;
 
 public class hjStreamServer {
-
+	// TODO: Vai passar a ter moviesCryptoConfig e boxCryptoConfig
 	static public void main( String []args ) throws Exception {
 		if (args.length != 3)
 		{
@@ -41,8 +41,8 @@ public class hjStreamServer {
 			SecretKey key = KeyRing.readSecretKey();
 
 			while ( g.available() > 0 ) {
-				size = g.readShort();
-				time = g.readLong();
+				size = g.readShort(); // Short Size
+				time = g.readLong();  // Long Timestamp
 				if ( count == 0 ) q0 = time; // tempo de referencia no stream
 				count += 1;
 				g.readFully(buff, 0, size );
@@ -51,16 +51,16 @@ public class hjStreamServer {
 					buff = CryptoStuff.encrypt(key, buff);
 				} catch (Exception ex)
 				{
-					System.out.println(ex.getMessage());
 					ex.printStackTrace();
 				}
+				// TODO: Adicionar integrity check -> Hash ou HMACS
+				// TODO: Verificar se com o padding e/ou com o hash o tamanho do buff não ficou maior do que o tamanho do buffer
 				p.setData(buff, 0, size );
 				p.setSocketAddress( addr );
 				long t = System.nanoTime();
 				Thread.sleep( Math.max(0, ((time-q0)-(t-t0))/1000000) );
 		   
 		        // send packet (with a frame payload)
-			    // Frames sent in clear (no encryption)
 			    s.send( p );
 			    System.out.print( "." );
 		}
