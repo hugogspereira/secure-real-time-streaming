@@ -6,10 +6,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.SocketAddress;
-import java.net.SocketException;
+import java.net.*;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -31,6 +28,14 @@ public class SafeDatagramSocket extends DatagramSocket {
 
     public SafeDatagramSocket(SocketAddress addr, String config) throws SocketException {
         super(addr);
+        safeDSocketInitialization(addr, config);
+    }
+
+    public SafeDatagramSocket(InetSocketAddress addr, String config) throws SocketException {
+        safeDSocketInitialization(addr, config);
+    }
+
+    private void safeDSocketInitialization(SocketAddress addr, String config) throws SocketException {
         try {
             InputStream inputStream = new FileInputStream(config);
             if (inputStream == null) {
@@ -38,20 +43,27 @@ public class SafeDatagramSocket extends DatagramSocket {
                 System.exit(1);
             }
             Properties properties = new Properties();
-            properties.loadFromXML(inputStream); // xml?
+            //properties.loadFromXML(inputStream); // xml?
+            properties.load(inputStream);
             // TODO: Muito importante! Ler como deve ser o ficheiro, e só a parte q diz respeito ao "addr" q recebemos no parametro
+            // TODO: Para já só está assim para que pudessemos testar. Nota que se tiver mais do que um filed com o mesmo nome, n sei como é que aquilo iria funcionar!
             this.ciphersuite = properties.getProperty(CIPHERSUITE);
+            System.out.println(ciphersuite);
             this.key = properties.getProperty(KEY);
+            System.out.println(key);
             this.iv = properties.getProperty(IV);
+            System.out.println(iv);
             this.integrity = properties.getProperty(INTEGRITY);
+            System.out.println(integrity);
             this.mackey = properties.getProperty(MACKEY);
+            System.out.println(mackey);
         } catch (Exception e) {
             throw new SocketException(e.getMessage());
         }
     }
 
     public void send(DatagramPacket p) throws IOException {   // Encrypt
-        // TODO: Usar o util para tirar as coisas do formato hexadecimal
+        // TODO: Usar o util para tirar as coisas do formato hexadecimal ?  Talvez n seja necessario
         try {
             Cipher cipher = Cipher.getInstance(ciphersuite);
             if(iv == null) {
@@ -61,7 +73,7 @@ public class SafeDatagramSocket extends DatagramSocket {
             if(key == null) {
                 throw new IOException("Key is invalid");
             }
-            SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(), ciphersuite);
+            SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(), ciphersuite.split("/")[0]); // Necessário split? Testar!
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
             int size = p.getLength();
             // TODO: Adicionar integrity check -> Hash ou HMACS !!!
@@ -94,7 +106,7 @@ public class SafeDatagramSocket extends DatagramSocket {
     }
 
     public void receive(DatagramPacket p) throws IOException { // Decrypt
-        // TODO: Usar o util para tirar as coisas do formato hexadecimal
+        // TODO: Usar o util para tirar as coisas do formato hexadecimal ? Talvez n seja necessario
         try {
             Cipher cipher = Cipher.getInstance(ciphersuite);
             if(iv == null) {
@@ -104,7 +116,7 @@ public class SafeDatagramSocket extends DatagramSocket {
             if(key == null) {
                 throw new IOException("Key is invalid");
             }
-            SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(), ciphersuite);
+            SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(), ciphersuite.split("/")[0]); // Necessário split? Testar!
             cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
             int size = p.getLength();
             // TODO: VERIFICAR o integrity check -> Hash ou HMACS !!!

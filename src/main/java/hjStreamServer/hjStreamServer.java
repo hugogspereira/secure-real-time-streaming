@@ -15,9 +15,8 @@ import socket.SafeDatagramSocket;
 public class hjStreamServer {
 	// TODO: Vai passar a ter moviesCryptoConfig e boxCryptoConfig
 	static public void main( String []args ) throws Exception {
-		if (args.length != 4)
-		{
-			System.out.println("Erro, usar: mySend <movie> <ip-multicast-address> <port> <movies-config>");
+		if (args.length != 4) {
+				System.out.println("Erro, usar: mySend <movie> <ip-multicast-address> <port> <movies-config>");
 	           	System.out.println("        or: mySend <movie> <ip-unicast-address> <port> <movies-config>");
 	           	System.exit(-1);
 			}
@@ -27,7 +26,7 @@ public class hjStreamServer {
 			DataInputStream g = new DataInputStream( new FileInputStream(args[0]) );
 			byte[] buff = new byte[4096];
 
-			SocketAddress addr = new InetSocketAddress( args[1], Integer.parseInt(args[2]));
+			InetSocketAddress addr = new InetSocketAddress( args[1], Integer.parseInt(args[2]));
 			SafeDatagramSocket s = new SafeDatagramSocket(addr, args[3]);
 			DatagramPacket p = new DatagramPacket(buff, buff.length, addr );
 			long t0 = System.nanoTime(); // tempo de referencia para este processo

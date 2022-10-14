@@ -49,6 +49,7 @@ public class hjBox {
     public static void main(String[] args) throws Exception {
         InputStream inputStream = new FileInputStream(args[0]);
         if (inputStream == null) {
+            System.out.println("Erro, usar: myBox <config> <movies-config>");
             System.err.println("Configuration file not found!");
             System.exit(1);
         }
