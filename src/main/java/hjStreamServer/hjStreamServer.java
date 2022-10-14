@@ -6,24 +6,19 @@ package hjStreamServer;
 */
 
 import java.io.*;
-import java.net.*;
-import javax.crypto.*;
-import java.util.Base64;
 import java.io.FileInputStream;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import javax.crypto.SecretKey;
-import crypto.CryptoStuff;
-import crypto.KeyRing;
+import java.net.SocketAddress;
+import socket.SafeDatagramSocket;
 
 public class hjStreamServer {
 	// TODO: Vai passar a ter moviesCryptoConfig e boxCryptoConfig
 	static public void main( String []args ) throws Exception {
-		if (args.length != 3)
+		if (args.length != 4)
 		{
-			System.out.println("Erro, usar: mySend <movie> <ip-multicast-address> <port>");
-	           	System.out.println("        or: mySend <movie> <ip-unicast-address> <port>");
+			System.out.println("Erro, usar: mySend <movie> <ip-multicast-address> <port> <movies-config>");
+	           	System.out.println("        or: mySend <movie> <ip-unicast-address> <port> <movies-config>");
 	           	System.exit(-1);
 			}
 			int size;
@@ -32,36 +27,25 @@ public class hjStreamServer {
 			DataInputStream g = new DataInputStream( new FileInputStream(args[0]) );
 			byte[] buff = new byte[4096];
 
-			DatagramSocket s = new DatagramSocket();
-			InetSocketAddress addr = new InetSocketAddress( args[1], Integer.parseInt(args[2]));
+			SocketAddress addr = new InetSocketAddress( args[1], Integer.parseInt(args[2]));
+			SafeDatagramSocket s = new SafeDatagramSocket(addr, args[3]);
 			DatagramPacket p = new DatagramPacket(buff, buff.length, addr );
 			long t0 = System.nanoTime(); // tempo de referencia para este processo
 			long q0 = 0;
 
-			SecretKey key = KeyRing.readSecretKey();
-
 			while ( g.available() > 0 ) {
-				size = g.readShort(); // Short Size
-				time = g.readLong();  // Long Timestamp
-				if ( count == 0 ) q0 = time; // tempo de referencia no stream
+				size = g.readShort();
+				time = g.readLong();
+				if ( count == 0 ) q0 = time;
 				count += 1;
 				g.readFully(buff, 0, size );
-
-				try {
-					buff = CryptoStuff.encrypt(key, buff);
-				} catch (Exception ex)
-				{
-					ex.printStackTrace();
-				}
-				// TODO: Adicionar integrity check -> Hash ou HMACS
-				// TODO: Verificar se com o padding e/ou com o hash o tamanho do buff não ficou maior do que o tamanho do buffer
 				p.setData(buff, 0, size );
 				p.setSocketAddress( addr );
 				long t = System.nanoTime();
 				Thread.sleep( Math.max(0, ((time-q0)-(t-t0))/1000000) );
 		   
 		        // send packet (with a frame payload)
-			    s.send( p );
+			    s.send(p);
 			    System.out.print( "." );
 		}
 

@@ -42,11 +42,12 @@ import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import java.io.InputStream;
 import crypto.*;
+import socket.SafeDatagramSocket;
 
 public class hjBox {
     // TODO: Vai passar a ter config.properties e boxCryptoConfig
     public static void main(String[] args) throws Exception {
-        InputStream inputStream = new FileInputStream("src/main/java/hjBox/config.properties");
+        InputStream inputStream = new FileInputStream(args[0]);
         if (inputStream == null) {
             System.err.println("Configuration file not found!");
             System.exit(1);
@@ -59,26 +60,19 @@ public class hjBox {
         SocketAddress inSocketAddress = parseSocketAddress(remote);
         Set<SocketAddress> outSocketAddressSet = Arrays.stream(destinations.split(",")).map(s -> parseSocketAddress(s)).collect(Collectors.toSet());
 
-	    DatagramSocket inSocket = new DatagramSocket(inSocketAddress);
+	    SafeDatagramSocket inSocket = new SafeDatagramSocket(inSocketAddress, args[1]);
         DatagramSocket outSocket = new DatagramSocket();
         byte[] buffer = new byte[4 * 1024];
-       
-        SecretKey key = KeyRing.readSecretKey();
-        byte[] decryptBuffer = new byte[4 * 1024];
+
         while (true) {
             DatagramPacket inPacket = new DatagramPacket(buffer, buffer.length);
  	        inSocket.receive(inPacket);  // if remote is unicast
 
             System.out.print("*");
             // TODO: Verificar a integridade do packet, se não estiver bem descarta-se e não se envia
-            try {
-                decryptBuffer = CryptoStuff.decrypt(key, buffer);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
             for (SocketAddress outSocketAddress : outSocketAddressSet)
             {
-                outSocket.send(new DatagramPacket(decryptBuffer, inPacket.getLength(), outSocketAddress));
+                outSocket.send(new DatagramPacket(buffer, inPacket.getLength(), outSocketAddress));
           }
         }
     }
