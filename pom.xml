@@ -39,21 +39,14 @@
                 <directory>src/main/java</directory>
                 <filtering>true</filtering>
                 <includes>
-                    <include>hjBox/movies-cryptoconfig.properties</include>
+                    <include>config/movies-cryptoconfig.txt</include>
                 </includes>
             </resource>
             <resource>
                 <directory>src/main/java</directory>
                 <filtering>true</filtering>
                 <includes>
-                    <include>hjStreamServer/movies-cryptoconfig.properties</include>
-                </includes>
-            </resource>
-            <resource>
-                <directory>src/main/java</directory>
-                <filtering>true</filtering>
-                <includes>
-                    <include>crypto/keyring</include>
+                    <include>config/box-cryptoconfig.txt</include>
                 </includes>
             </resource>
         </resources>

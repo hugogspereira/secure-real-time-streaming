@@ -41,21 +41,18 @@ public class SafeDatagramSocket extends DatagramSocket {
     }
 
     private void safeDSocketInitialization(SocketAddress addr, String config) throws SocketException {
-        Security.addProvider(new BouncyCastleProvider());
-        String propsFileName = Utils.createProps(config); //apartir de um config ele cria um props file e guarda em src/main/java/config no entanto ele por agora só pega no cars.dat temos que adicionar um novo parametro para ele escolher o que queremos. Ele retorna o nome do ficheiro criado
+        Security.addProvider(new BouncyCastleProvider());  // Não acho que seja necessário, pois está no pom.xml!
         try {
-            InputStream inputStream = new FileInputStream("src/main/java/config/"+propsFileName);
+            String propsFileName = Utils.createProps(addr, config);
+            //System.out.println(Utils.CONFIG_PATH+propsFileName);
+            InputStream inputStream = new FileInputStream(Utils.CONFIG_PATH+propsFileName);
             if (inputStream == null) {
                 System.err.println("Configuration file not found!");
                 System.exit(1);
             }
-
-            
             Properties properties = new Properties();
-            //properties.loadFromXML(inputStream); // xml?
             properties.load(inputStream);
-            // TODO: Muito importante! Ler como deve ser o ficheiro, e só a parte q diz respeito ao "addr" q recebemos no parametro
-            // TODO: Para já só está assim para que pudessemos testar. Nota que se tiver mais do que um filed com o mesmo nome, n sei como é que aquilo iria funcionar!
+            // TODO: O que acontece se houver mais do que um ficheiro com o mesmo nome?
             this.ciphersuite = properties.getProperty(CIPHERSUITE);
             System.out.println(ciphersuite);
             this.key = properties.getProperty(KEY);
@@ -73,7 +70,6 @@ public class SafeDatagramSocket extends DatagramSocket {
     }
 
     public void send(DatagramPacket p) throws IOException {   // Encrypt
-        // TODO: Usar o util para tirar as coisas do formato hexadecimal ?  Talvez n seja necessario
         try {
             Cipher cipher = Cipher.getInstance(ciphersuite);
             if(iv == null) {
@@ -116,7 +112,6 @@ public class SafeDatagramSocket extends DatagramSocket {
     }
 
     public void receive(DatagramPacket p) throws IOException { // Decrypt
-        // TODO: Usar o util para tirar as coisas do formato hexadecimal ? Talvez n seja necessario
         try {
             Cipher cipher = Cipher.getInstance(ciphersuite);
             if(iv == null) {
