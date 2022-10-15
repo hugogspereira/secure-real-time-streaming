@@ -10,10 +10,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.Security;
+import java.security.*;
 import java.util.Properties;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -81,14 +78,49 @@ public class SafeDatagramSocket extends DatagramSocket {
             }
             SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(), ciphersuite.split("/")[0]); // Necessário split? Testar!
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
+
             int size = p.getLength();
-            // TODO: Adicionar integrity check -> Hash ou HMACS !!!
-            byte[] data = cipher.doFinal(p.getData());
-            // TODO: Verificar se com o padding e/ou com o HASH o tamanho do buff não ficou maior do que o tamanho do buffer
-            if(size < data.length) {
-                p.setLength((int) Math.ceil((double) data.length/1024));
+            byte[] data = p.getData();
+            byte[] encryptedData;
+
+            if(integrity != null) {
+                int integritySize, ctLength;
+                byte[] cipherText, integrityData;
+                if(mackey == null) {
+                    MessageDigest hash = MessageDigest.getInstance(integrity);
+                    integritySize = hash.getDigestLength();
+
+                    cipherText = new byte[cipher.getOutputSize(size + integritySize)];
+                    ctLength = cipher.update(data, 0, size, cipherText, 0);
+
+                    hash.update(data);
+                    integrityData = hash.digest();
+                }
+                else {
+                    Mac hMac = Mac.getInstance(mackey);
+                    Key hMacKey = new SecretKeySpec(key.getBytes(), mackey);
+                    hMac.init(hMacKey);
+                    integritySize = hMac.getMacLength();
+
+                    cipherText = new byte[cipher.getOutputSize(size + integritySize)];
+                    ctLength = cipher.update(data, 0, size, cipherText, 0);
+
+                    hMac.update(data);
+                    integrityData = hMac.doFinal();
+                }
+                cipher.doFinal(integrityData, 0, integritySize, cipherText, ctLength);
+                // See if size has become to small
+                if(p.getLength() < integritySize) {
+                    p.setLength(integritySize);
+                    p.setData(integrityData);
+                }
             }
-            p.setData(data);
+            else {
+                // É suposto ser uma excepção ? N percebi bem, supostamente no enunciado diz q só pode ser ou uma ou outra, mas a config de exemplo n tem nehnhuma.
+                // Perguntar ao Professor
+                throw new IOException("Not defined the integrity control in config file!");
+                // Frames without integrity verification must be discarded, avoiding to send invalid frames to the media player
+            }
             super.send(p);
         }
         catch (NoSuchAlgorithmException e) {
@@ -108,6 +140,8 @@ public class SafeDatagramSocket extends DatagramSocket {
         }
         catch (InvalidAlgorithmParameterException e) {
             throw new IOException("Send Encrypted data has failed! Invalid algorithm parameter exception", e);
+        } catch (ShortBufferException e) {
+            throw new IOException("Send Encrypted data has failed! Buffer is to short exception", e);
         }
     }
 
@@ -123,14 +157,64 @@ public class SafeDatagramSocket extends DatagramSocket {
             }
             SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(), ciphersuite.split("/")[0]); // Necessário split? Testar!
             cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+
             int size = p.getLength();
-            // TODO: VERIFICAR o integrity check -> Hash ou HMACS !!!
-            byte[] data = cipher.doFinal(p.getData());
-            // TODO: Verificar se com o padding e/ou com o HASH o tamanho do buff não ficou maior do que o tamanho do buffer
-            if(size < data.length) {
-                p.setLength((int) Math.ceil((double) data.length/1024));
+            byte[] data = p.getData();
+            byte[] encryptedData;
+
+            if(integrity != null) {
+                byte[] decryptedData, messageIntegrity, movieData;
+                int messageLength;
+                if(mackey == null) {
+                    MessageDigest hash = MessageDigest.getInstance(integrity);
+
+                    decryptedData = cipher.doFinal(data);
+                    messageLength = decryptedData.length - hash.getDigestLength();
+                    movieData = new byte[messageLength];
+                    hash.update(decryptedData, 0, messageLength);
+
+                    messageIntegrity = new byte[hash.getDigestLength()];
+                    System.arraycopy(decryptedData, messageLength, messageIntegrity, 0, messageIntegrity.length);
+
+                    if(MessageDigest.isEqual(hash.digest(), messageIntegrity)) {
+                        System.arraycopy(decryptedData, 0, movieData, 0, messageLength);
+                        // Fazer setLength() ?
+                        p.setData(movieData);
+                    }
+                    else { // Não mandar o packet! Integrity check failed!
+                        return;
+                    }
+                }
+                else {
+                    Mac hMac = Mac.getInstance(mackey);
+                    Key hMacKey = new SecretKeySpec(key.getBytes(), mackey);
+
+                    decryptedData = cipher.doFinal(data, 0, size);
+                    messageLength = decryptedData.length - hMac.getMacLength();
+                    movieData = new byte[messageLength];
+
+                    hMac.init(hMacKey);
+                    hMac.update(decryptedData, 0, messageLength);
+
+                    messageIntegrity = new byte[hMac.getMacLength()];
+                    System.arraycopy(decryptedData, messageLength, messageIntegrity, 0, messageIntegrity.length);
+
+                    if(MessageDigest.isEqual(hMac.doFinal(), messageIntegrity)) {
+                        System.arraycopy(decryptedData, 0, movieData, 0, messageLength);
+                        // Fazer setLength() ?
+                        p.setData(movieData);
+                    }
+                    else {  // Não mandar o packet! Integrity check failed!
+                        return;
+                    }
+                }
             }
-            p.setData(data);
+            else {
+                // É suposto ser uma excepção ? N percebi bem, supostamente no enunciado diz q só pode ser ou uma ou outra, mas a config de exemplo n tem nehnhuma.
+                // Perguntar ao Professor
+                throw new IOException("Not defined the integrity control in config file!");
+                // Frames without integrity verification must be discarded, avoiding to send invalid frames to the media player
+            }
             super.receive(p);
         }
         catch (NoSuchAlgorithmException e) {
