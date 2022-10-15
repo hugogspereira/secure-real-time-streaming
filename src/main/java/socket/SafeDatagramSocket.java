@@ -3,6 +3,9 @@ package socket;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import util.Utils;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,7 +13,9 @@ import java.net.*;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Security;
 import java.util.Properties;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class SafeDatagramSocket extends DatagramSocket {
 
@@ -36,12 +41,16 @@ public class SafeDatagramSocket extends DatagramSocket {
     }
 
     private void safeDSocketInitialization(SocketAddress addr, String config) throws SocketException {
+        Security.addProvider(new BouncyCastleProvider());
+        String propsFileName = Utils.createProps(config); //apartir de um config ele cria um props file e guarda em src/main/java/config no entanto ele por agora só pega no cars.dat temos que adicionar um novo parametro para ele escolher o que queremos. Ele retorna o nome do ficheiro criado
         try {
-            InputStream inputStream = new FileInputStream(config);
+            InputStream inputStream = new FileInputStream("src/main/java/config/"+propsFileName);
             if (inputStream == null) {
                 System.err.println("Configuration file not found!");
                 System.exit(1);
             }
+
+            
             Properties properties = new Properties();
             //properties.loadFromXML(inputStream); // xml?
             properties.load(inputStream);
@@ -57,6 +66,7 @@ public class SafeDatagramSocket extends DatagramSocket {
             System.out.println(integrity);
             this.mackey = properties.getProperty(MACKEY);
             System.out.println(mackey);
+            
         } catch (Exception e) {
             throw new SocketException(e.getMessage());
         }

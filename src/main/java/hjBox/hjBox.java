@@ -41,8 +41,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import java.io.InputStream;
-import crypto.*;
+
 import socket.SafeDatagramSocket;
+import util.*;
 
 public class hjBox {
     // TODO: Vai passar a ter config.properties e boxCryptoConfig
