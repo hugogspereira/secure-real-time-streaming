@@ -3,9 +3,7 @@ package socket;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
-import util.Utils;
-
+import util.ConfigReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,11 +14,11 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class SafeDatagramSocket extends DatagramSocket {
 
-    private static final String CIPHERSUITE = "ciphersuite";
-    private static final String KEY = "key";
-    private static final String IV = "iv";
-    private static final String INTEGRITY = "integrity";
-    private static final String MACKEY = "mackey";
+    private static final String CIPHERSUITE = "CIPHERSUITE";
+    private static final String KEY = "KEY";
+    private static final String IV = "IV";
+    private static final String INTEGRITY = "INTEGRITY";
+    private static final String MACKEY = "MACKEY";
 
     private String boxCiphersuite, boxKey, boxIv, boxIntegrity, boxMackey;
     private String movieCiphersuite, movieKey, movieIv, movieIntegrity, movieMackey;
@@ -41,50 +39,63 @@ public class SafeDatagramSocket extends DatagramSocket {
     private void readProperties(SocketAddress addr, String boxConfig, String movieName, String moviesConfig) throws SocketException {
         Security.addProvider(new BouncyCastleProvider());
         try {
-            String propsFileName = Utils.createProps(addr.toString(), boxConfig);
+            String propsFileName = ConfigReader.read(boxConfig, addr.toString().split("/")[1]);
             //System.out.println(Utils.CONFIG_PATH+propsFileName);
-            InputStream inputStream = new FileInputStream(Utils.CONFIG_PATH+propsFileName);
+            InputStream inputStream = new FileInputStream(ConfigReader.CONFIG_PATH+propsFileName);
             if (inputStream == null) {
                 System.err.println("Configuration Box file not found!");
                 System.exit(1);
             }
             Properties properties = new Properties();
             properties.load(inputStream);
-            this.boxCiphersuite = properties.getProperty(CIPHERSUITE);
+            System.out.println("-----------------\nBOX");
+            this.boxCiphersuite = checkProperty(properties,CIPHERSUITE);
             System.out.println(boxCiphersuite);
-            this.boxKey = properties.getProperty(KEY);
+            this.boxKey = checkProperty(properties,KEY);
             System.out.println(boxKey);
-            this.boxIv = properties.getProperty(IV);
+            this.boxIv = checkProperty(properties,IV);
             System.out.println(boxIv);
-            this.boxIntegrity = properties.getProperty(INTEGRITY);
+            this.boxIntegrity = checkProperty(properties,INTEGRITY);
             System.out.println(boxIntegrity);
-            this.boxMackey = properties.getProperty(MACKEY);
+            this.boxMackey = checkProperty(properties,MACKEY);
             System.out.println(boxMackey);
+            System.out.println("-----------------");
 
             if(movieName != null) {
-                propsFileName = Utils.createProps(movieName, moviesConfig);
+                propsFileName = ConfigReader.read(moviesConfig, movieName);
                 //System.out.println(Utils.CONFIG_PATH+propsFileName);
-                inputStream = new FileInputStream(Utils.CONFIG_PATH+propsFileName);
+                inputStream = new FileInputStream(ConfigReader.CONFIG_PATH+propsFileName);
                 if (inputStream == null) {
                     System.err.println("Configuration Movie file not found!");
                     System.exit(1);
                 }
                 properties = new Properties();
                 properties.load(inputStream);
-                this.movieCiphersuite = properties.getProperty(CIPHERSUITE);
+                System.out.println("-----------------\nMOVIE");
+                this.movieCiphersuite = checkProperty(properties,CIPHERSUITE);
                 System.out.println(movieCiphersuite);
-                this.movieKey = properties.getProperty(KEY);
+                this.movieKey = checkProperty(properties,KEY);
                 System.out.println(movieKey);
-                this.movieIv = properties.getProperty(IV);
+                this.movieIv = checkProperty(properties,IV);
                 System.out.println(movieIv);
-                this.movieIntegrity = properties.getProperty(INTEGRITY);
+                this.movieIntegrity = checkProperty(properties,INTEGRITY);
                 System.out.println(movieIntegrity);
-                this.movieMackey = properties.getProperty(MACKEY);
+                this.movieMackey = checkProperty(properties,MACKEY);
                 System.out.println(movieMackey);
+                System.out.println("-----------------");
             }
         } catch (Exception e) {
+            e.printStackTrace();
             throw new SocketException(e.getMessage());
         }
+    }
+
+    private String checkProperty(Properties properties, String property) {
+        String res = properties.getProperty(property);
+        if(res.equalsIgnoreCase("NULL")) {
+            res = null;
+        }
+        return res;
     }
 
     public void send(DatagramPacket p) throws IOException {   // Encrypt
