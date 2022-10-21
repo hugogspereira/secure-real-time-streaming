@@ -95,6 +95,9 @@ public class SafeDatagramSocket extends DatagramSocket {
 
         // Depois envia-se o data packet com os dados encriptados !
         try {
+            if(boxCiphersuite == null){
+                throw new IOException("Ciphersuite is invalid");
+            }
             Cipher cipher = Cipher.getInstance(boxCiphersuite);
             if(boxIv == null) {
                 throw new IOException("Iv is invalid");
@@ -200,6 +203,9 @@ public class SafeDatagramSocket extends DatagramSocket {
         }
 
         try {
+            if(ciphersuite == null){
+                throw new IOException("Ciphersuite is invalid");
+            }
             Cipher cipher = Cipher.getInstance(ciphersuite);
             if(iv == null) {
                 throw new IOException("Iv is invalid");
