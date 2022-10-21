@@ -22,12 +22,11 @@ public class hjStreamServer {
 			int size;
 			int count = 0;
 			long time;
-			// TODO: Aqui é que se tem de desincriptar o "movie" (args[0]) conforme a "movies-config" (args[1])
 			DataInputStream g = new DataInputStream( new FileInputStream(args[0]) );
 			byte[] buff = new byte[4096];
 
 			InetSocketAddress addr = new InetSocketAddress( args[2], Integer.parseInt(args[3]));
-			SafeDatagramSocket s = new SafeDatagramSocket(addr, args[4]);
+			SafeDatagramSocket s = new SafeDatagramSocket(addr, args[4], args[0], args[1]);
 			DatagramPacket p = new DatagramPacket(buff, buff.length, addr );
 			long t0 = System.nanoTime(); // tempo de referencia para este processo
 			long q0 = 0;

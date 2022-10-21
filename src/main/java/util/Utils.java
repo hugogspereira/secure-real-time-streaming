@@ -4,15 +4,15 @@ import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 import javax.xml.parsers.*;
 import java.io.*;
-import java.net.SocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class Utils {
     public static final String CONFIG_PATH = "src/main/java/config/properties/";
 
-    public static String createProps(SocketAddress addr, String configPath) throws Exception {
+    public static String createProps(String addr, String configPath) throws Exception {
         // Addr : localhost/127.0.0.1:9999
+        // Addr : ...
         // configPath: src/main/java/config/box-cryptoconfig.txt
 
         // TODO: Pelo que testei esta solucao parece que n vi funcionar pelas tags seram address com pontos e ":"
@@ -31,7 +31,7 @@ public class Utils {
             Document doc = builder.parse(new InputSource(stringReader.toString()));
 
             Element root = doc.getDocumentElement();
-            NodeList n = root.getElementsByTagName(addr.toString());
+            NodeList n = root.getElementsByTagName(addr);
 
             //Cria o ficheiro .properties com o mesmo nome do ficheiro input
             String[] aux = configPath.split("/");

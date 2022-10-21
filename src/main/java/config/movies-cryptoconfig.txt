@@ -5,6 +5,7 @@ iv: 4524568176123498
 integrity: SHA256
 mackey: NULL
 </cars.dat.encrypted>
+
 <monsters.dat.encrypted>
 ciphersuite: RC6/CTR/NoPadding
 key: 476e67a34e557189
