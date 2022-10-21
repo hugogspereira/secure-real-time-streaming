@@ -39,18 +39,15 @@ import java.util.Arrays;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.crypto.SecretKey;
 import java.io.InputStream;
-
 import socket.SafeDatagramSocket;
-import util.*;
 
 public class hjBox {
     // TODO: Vai passar a ter config.properties e boxCryptoConfig
     public static void main(String[] args) throws Exception {
         InputStream inputStream = new FileInputStream(args[0]);
         if (inputStream == null) {
-            System.out.println("Erro, usar: myBox <config> <movies-config>");
+            System.out.println("Erro, usar: myBox <config> <box-config>");
             System.err.println("Configuration file not found!");
             System.exit(1);
         }

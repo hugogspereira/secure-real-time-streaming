@@ -9,25 +9,25 @@ import java.io.*;
 import java.io.FileInputStream;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import socket.SafeDatagramSocket;
 
 public class hjStreamServer {
 	// TODO: Vai passar a ter moviesCryptoConfig e boxCryptoConfig
 	static public void main( String []args ) throws Exception {
-		if (args.length != 4) {
-				System.out.println("Erro, usar: mySend <movie> <ip-multicast-address> <port> <movies-config>");
-	           	System.out.println("        or: mySend <movie> <ip-unicast-address> <port> <movies-config>");
+		if (args.length != 5) {
+				System.out.println("Erro, usar: mySend <movie> <movies-config> <ip-multicast-address> <port> <box-config>");
+	           	System.out.println("        or: mySend <movie> <movies-config> <ip-unicast-address> <port> <box-config>");
 	           	System.exit(-1);
 			}
 			int size;
 			int count = 0;
 			long time;
+			// TODO: Aqui é que se tem de desincriptar o "movie" (args[0]) conforme a "movies-config" (args[1])
 			DataInputStream g = new DataInputStream( new FileInputStream(args[0]) );
 			byte[] buff = new byte[4096];
 
-			InetSocketAddress addr = new InetSocketAddress( args[1], Integer.parseInt(args[2]));
-			SafeDatagramSocket s = new SafeDatagramSocket(addr, args[3]);
+			InetSocketAddress addr = new InetSocketAddress( args[2], Integer.parseInt(args[3]));
+			SafeDatagramSocket s = new SafeDatagramSocket(addr, args[4]);
 			DatagramPacket p = new DatagramPacket(buff, buff.length, addr );
 			long t0 = System.nanoTime(); // tempo de referencia para este processo
 			long q0 = 0;
