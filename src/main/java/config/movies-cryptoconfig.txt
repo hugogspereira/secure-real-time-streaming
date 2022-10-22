@@ -1,6 +1,6 @@
 <cars.dat.encrypted>
-ciphersuite: AES/CBC/PKCS5Padding
-key:91342609ae5435f69a23652476e67ab
+ciphersuite: AES/OFB/NoPadding
+key:91342609ae5435f69a23652476e67abc
 iv: 4524568176123498
 integrity: SHA256
 mackey: NULL

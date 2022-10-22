@@ -5,7 +5,7 @@ package hjStreamServer;
 * for clients to play in real time the transmitted movies
 */
 
-import java.io.DataInputStream;
+import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import socket.DataInputDecryptStream;

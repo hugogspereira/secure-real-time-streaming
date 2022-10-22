@@ -272,6 +272,4 @@ public class SafeDatagramSocket extends DatagramSocket {
         }
         super.receive(p);
     }
-
-
 }
