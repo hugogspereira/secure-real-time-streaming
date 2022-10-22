@@ -19,7 +19,6 @@ public class SafeDatagramSocket extends DatagramSocket {
     private static final String MACKEY = "MACKEY";
 
     private String boxCiphersuite, boxKey, boxIv, boxIntegrity, boxMackey;
-    private String movieCiphersuite, movieKey, movieIv, movieIntegrity, movieMackey;
 
     public SafeDatagramSocket() throws SocketException {
         super();
@@ -62,32 +61,7 @@ public class SafeDatagramSocket extends DatagramSocket {
             System.out.println(boxMackey);
             System.out.println("-----------------");
 
-            if(movieName != null) {
-                String[] path = movieName.split("/");
-                propsFileName = ConfigReader.read(moviesConfig, path[path.length-1]);
-                //System.out.println(Utils.CONFIG_PATH+propsFileName);
-                inputStream = new FileInputStream(ConfigReader.CONFIG_PATH+propsFileName);
-                if (inputStream == null) {
-                    System.err.println("Configuration Movie file not found!");
-                    System.exit(1);
-                }
-                properties = new Properties();
-                properties.load(inputStream);
-
-                System.out.println("-----------------\nMOVIE");
-                this.movieCiphersuite = checkProperty(properties,CIPHERSUITE);
-                this.movieKey = checkProperty(properties,KEY);
-                this.movieIv = checkProperty(properties,IV);
-                this.movieIntegrity = checkProperty(properties,INTEGRITY);
-                this.movieMackey = checkProperty(properties,MACKEY);
-
-                System.out.println(movieCiphersuite);
-                System.out.println(movieKey);
-                System.out.println(movieIv);
-                System.out.println(movieIntegrity);
-                System.out.println(movieMackey);
-                System.out.println("-----------------");
-            }
+            
         } catch (Exception e) {
             e.printStackTrace();
             throw new SocketException(e.getMessage());
@@ -205,20 +179,14 @@ public class SafeDatagramSocket extends DatagramSocket {
 
     public byte[] decrypt(boolean isMovie, byte[] data) throws IOException {
         String ciphersuite, key, iv, integrity, mackey;
-        if(isMovie) {
-            ciphersuite = movieCiphersuite;
-            key = movieKey;
-            iv = movieIv;
-            integrity = movieIntegrity;
-            mackey = movieMackey;
-        }
-        else {
-            ciphersuite = boxCiphersuite;
-            key = boxKey;
-            iv = boxIv;
-            integrity = boxIntegrity;
-            mackey = boxMackey;
-        }
+      
+        
+        ciphersuite = boxCiphersuite;
+        key = boxKey;
+        iv = boxIv;
+        integrity = boxIntegrity;
+        mackey = boxMackey;
+    
 
         try {
             if(ciphersuite == null){
@@ -260,7 +228,7 @@ public class SafeDatagramSocket extends DatagramSocket {
                     }
                 }
                 else {
-                    Mac hMac = Mac.getInstance(mackey);
+                    Mac hMac = Mac.getInstance(integrity);
                     Key hMacKey = new SecretKeySpec(key.getBytes(), mackey);
 
                     decryptedData = cipher.doFinal(data, 0, size);

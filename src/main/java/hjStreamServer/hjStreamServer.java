@@ -6,10 +6,10 @@ package hjStreamServer;
 */
 
 import java.io.*;
-import java.io.FileInputStream;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import socket.SafeDatagramSocket;
+import util.MovieDecriptor;
 
 public class hjStreamServer {
 	// TODO: Vai passar a ter moviesCryptoConfig e boxCryptoConfig
@@ -22,7 +22,7 @@ public class hjStreamServer {
 			int size;
 			int count = 0;
 			long time;
-			DataInputStream g = new DataInputStream( new FileInputStream(args[0]) );
+			DataInputStream g = new DataInputStream( new ByteArrayInputStream(MovieDecriptor.decrypt(args[1], args[0])));
 			byte[] buff = new byte[4096];
 
 			InetSocketAddress addr = new InetSocketAddress( args[2], Integer.parseInt(args[3]));

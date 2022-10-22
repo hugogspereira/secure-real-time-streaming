@@ -108,7 +108,7 @@ public class EncryptMovies {
 				}
 				cipher.doFinal(integrityData, 0, integritySize, cipherText, ctLength);
 				FileOutputStream outputStream = new FileOutputStream(encryptedFile);
-				outputStream.write(integrityData);   // integrityData ??????? TODO
+				outputStream.write(cipherText);   // integrityData ??????? TODO
 
 				inputStream.close();
 				outputStream.close();
