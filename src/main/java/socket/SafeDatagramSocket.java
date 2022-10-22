@@ -260,7 +260,7 @@ public class SafeDatagramSocket extends DatagramSocket {
                     }
                 }
                 else {
-                    Mac hMac = Mac.getInstance(mackey);
+                    Mac hMac = Mac.getInstance(integrity);
                     Key hMacKey = new SecretKeySpec(key.getBytes(), mackey);
 
                     decryptedData = cipher.doFinal(data, 0, size);
