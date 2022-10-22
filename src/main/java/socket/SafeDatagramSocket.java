@@ -141,7 +141,7 @@ public class SafeDatagramSocket extends DatagramSocket {
                     integrityData = hash.digest();
                 }
                 else {
-                    Mac hMac = Mac.getInstance(boxMackey);
+                    Mac hMac = Mac.getInstance(boxIntegrity);
                     Key hMacKey = new SecretKeySpec(boxKey.getBytes(), boxMackey);
                     hMac.init(hMacKey);
                     integritySize = hMac.getMacLength();

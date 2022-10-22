@@ -95,7 +95,7 @@ public class EncryptMovies {
 					integrityData = hash.digest();
 				}
 				else {
-					Mac hMac = Mac.getInstance(movieMackey);
+					Mac hMac = Mac.getInstance(movieIntegrity);
 					Key hMacKey = new SecretKeySpec(movieKey.getBytes(), movieMackey);
 					hMac.init(hMacKey);
 					integritySize = hMac.getMacLength();
