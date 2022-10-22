@@ -67,7 +67,7 @@ public class EncryptMovies {
 			if(movieKey == null) {
 				throw new Exception("Key is invalid");
 			}
-			SecretKeySpec secretKey = new SecretKeySpec(movieKey.getBytes(), movieCiphersuite.split("/")[0]); // Necessário split? Testar!
+			SecretKeySpec secretKey = new SecretKeySpec(movieKey.getBytes(), movieCiphersuite);
 			cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
 
 			String[] fullPath = fullMovieName.split(".encrypted");
@@ -107,8 +107,12 @@ public class EncryptMovies {
 					integrityData = hMac.doFinal();
 				}
 				cipher.doFinal(integrityData, 0, integritySize, cipherText, ctLength);
+				System.out.println("SIZE integrityData: "+integrityData.length);
+				System.out.println("SIZE integritySize: "+integritySize);
+				System.out.println("SIZE cipherText: "   +cipherText.length);
+
 				FileOutputStream outputStream = new FileOutputStream(encryptedFile);
-				outputStream.write(integrityData);   // integrityData ??????? TODO
+				outputStream.write(cipherText);   // integrityData ??????? TODO
 
 				inputStream.close();
 				outputStream.close();

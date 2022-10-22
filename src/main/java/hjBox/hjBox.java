@@ -68,7 +68,6 @@ public class hjBox {
  	        inSocket.receive(inPacket);  // if remote is unicast
 
             System.out.print("*");
-            // TODO: Verificar a integridade do packet, se não estiver bem descarta-se e não se envia
             for (SocketAddress outSocketAddress : outSocketAddressSet)
             {
                 outSocket.send(new DatagramPacket(buffer, inPacket.getLength(), outSocketAddress));

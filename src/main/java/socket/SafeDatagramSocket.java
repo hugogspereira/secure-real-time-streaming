@@ -39,7 +39,6 @@ public class SafeDatagramSocket extends DatagramSocket {
 
         try {
             String propsFileName = ConfigReader.read(boxConfig, addr.toString().split("/")[1]);
-            //System.out.println(Utils.CONFIG_PATH+propsFileName);
             InputStream inputStream = new FileInputStream(ConfigReader.CONFIG_PATH+propsFileName);
             if (inputStream == null) {
                 System.err.println("Configuration Box file not found!");
@@ -65,7 +64,6 @@ public class SafeDatagramSocket extends DatagramSocket {
             if(movieName != null) {
                 String[] path = movieName.split("/");
                 propsFileName = ConfigReader.read(moviesConfig, path[path.length-1]);
-                //System.out.println(Utils.CONFIG_PATH+propsFileName);
                 inputStream = new FileInputStream(ConfigReader.CONFIG_PATH+propsFileName);
                 if (inputStream == null) {
                     System.err.println("Configuration Movie file not found!");
@@ -103,12 +101,8 @@ public class SafeDatagramSocket extends DatagramSocket {
     }
 
     public void send(DatagramPacket p) throws IOException {   // Encrypt
-        // Desincripta os packets do movie q está encriptado !
-        byte[] data = decrypt(true, p.getData());
-        if(data == null)
-            return;
-
         // Depois envia-se o data packet com os dados encriptados !
+        byte[] data = p.getData();
         try {
             if(boxCiphersuite == null){
                 throw new IOException("Ciphersuite is invalid");
@@ -154,9 +148,9 @@ public class SafeDatagramSocket extends DatagramSocket {
                 }
                 cipher.doFinal(integrityData, 0, integritySize, cipherText, ctLength);
                 // TODO: See if size has become to small (Fazer isto?)
-                if(p.getLength() < integritySize) {
-                    p.setLength(integritySize);
-                    p.setData(integrityData);
+                if(p.getLength() < ctLength) {
+                    p.setLength(ctLength);
+                    p.setData(cipherText);
                 }
             }
             else {
@@ -191,57 +185,29 @@ public class SafeDatagramSocket extends DatagramSocket {
     }
 
     public void receive(DatagramPacket p) throws IOException { // Decrypt
-        byte[] data = decrypt(false, p.getData());
-        if(data == null)
-            return;
-
-        // TODO: Fazer setLength() ?
-        if(p.getLength() < data.length) {
-            p.setLength(data.length);
-            p.setData(data);
-        }
-        super.receive(p);
-    }
-
-    public byte[] decrypt(boolean isMovie, byte[] data) throws IOException {
-        String ciphersuite, key, iv, integrity, mackey;
-        if(isMovie) {
-            ciphersuite = movieCiphersuite;
-            key = movieKey;
-            iv = movieIv;
-            integrity = movieIntegrity;
-            mackey = movieMackey;
-        }
-        else {
-            ciphersuite = boxCiphersuite;
-            key = boxKey;
-            iv = boxIv;
-            integrity = boxIntegrity;
-            mackey = boxMackey;
-        }
-
+        byte[] movieData, data = p.getData();
         try {
-            if(ciphersuite == null){
+            if(boxCiphersuite == null){
                 throw new IOException("Ciphersuite is invalid");
             }
-            Cipher cipher = Cipher.getInstance(ciphersuite);
-            if(iv == null) {
+            Cipher cipher = Cipher.getInstance(boxCiphersuite);
+            if(boxIv == null) {
                 throw new IOException("Iv is invalid");
             }
-            IvParameterSpec ivSpec = new IvParameterSpec(iv.getBytes());
-            if(key == null) {
+            IvParameterSpec ivSpec = new IvParameterSpec(boxIv.getBytes());
+            if(boxKey == null) {
                 throw new IOException("Key is invalid");
             }
-            SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(), ciphersuite.split("/")[0]); // Necessário split? Testar!
+            SecretKeySpec secretKey = new SecretKeySpec(boxKey.getBytes(), boxCiphersuite);
             cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
 
             int size = data.length;
 
-            if(integrity != null) {
-                byte[] decryptedData, messageIntegrity, movieData;
+            if(boxIntegrity != null) {
+                byte[] decryptedData, messageIntegrity;
                 int messageLength;
-                if(mackey == null) {
-                    MessageDigest hash = MessageDigest.getInstance(integrity);
+                if(boxMackey == null) {
+                    MessageDigest hash = MessageDigest.getInstance(boxIntegrity);
 
                     decryptedData = cipher.doFinal(data);
                     messageLength = decryptedData.length - hash.getDigestLength();
@@ -253,15 +219,11 @@ public class SafeDatagramSocket extends DatagramSocket {
 
                     if(MessageDigest.isEqual(hash.digest(), messageIntegrity)) {
                         System.arraycopy(decryptedData, 0, movieData, 0, messageLength);
-                        return movieData;
-                    }
-                    else { // Não mandar o packet! Integrity check failed!
-                        return null;
                     }
                 }
                 else {
-                    Mac hMac = Mac.getInstance(integrity);
-                    Key hMacKey = new SecretKeySpec(key.getBytes(), mackey);
+                    Mac hMac = Mac.getInstance(boxIntegrity);
+                    Key hMacKey = new SecretKeySpec(boxKey.getBytes(), boxMackey);
 
                     decryptedData = cipher.doFinal(data, 0, size);
                     messageLength = decryptedData.length - hMac.getMacLength();
@@ -275,10 +237,6 @@ public class SafeDatagramSocket extends DatagramSocket {
 
                     if(MessageDigest.isEqual(hMac.doFinal(), messageIntegrity)) {
                         System.arraycopy(decryptedData, 0, movieData, 0, messageLength);
-                        return movieData;
-                    }
-                    else {  // Não mandar o packet! Integrity check failed!
-                        return null;
                     }
                 }
             }
@@ -307,5 +265,13 @@ public class SafeDatagramSocket extends DatagramSocket {
         catch (InvalidAlgorithmParameterException e) {
             throw new IOException("Receive Encrypted data has failed! Invalid algorithm parameter exception", e);
         }
+        // TODO: Fazer setLength() ?
+        if(p.getLength() < movieData.length) {
+            p.setLength(movieData.length);
+            p.setData(movieData);
+        }
+        super.receive(p);
     }
+
+
 }

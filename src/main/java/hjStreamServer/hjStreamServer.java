@@ -5,10 +5,10 @@ package hjStreamServer;
 * for clients to play in real time the transmitted movies
 */
 
-import java.io.*;
-import java.io.FileInputStream;
+import java.io.DataInputStream;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
+import socket.DataInputDecryptStream;
 import socket.SafeDatagramSocket;
 
 public class hjStreamServer {
@@ -22,8 +22,8 @@ public class hjStreamServer {
 			int size;
 			int count = 0;
 			long time;
-			DataInputStream g = new DataInputStream( new FileInputStream(args[0]) );
-			byte[] buff = new byte[4096];
+			DataInputStream g = (new DataInputDecryptStream( args[0], args[1]).getDataInputStream());
+			byte[] buff = new byte[4 * 1024];
 
 			InetSocketAddress addr = new InetSocketAddress( args[2], Integer.parseInt(args[3]));
 			SafeDatagramSocket s = new SafeDatagramSocket(addr, args[4], args[0], args[1]);
@@ -36,7 +36,7 @@ public class hjStreamServer {
 				time = g.readLong();
 				if ( count == 0 ) q0 = time;
 				count += 1;
-				g.readFully(buff, 0, size );
+				g.readFully(buff, 0, size);
 				p.setData(buff, 0, size );
 				p.setSocketAddress( addr );
 				long t = System.nanoTime();
