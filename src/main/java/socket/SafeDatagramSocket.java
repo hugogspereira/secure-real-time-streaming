@@ -198,7 +198,7 @@ public class SafeDatagramSocket extends DatagramSocket {
             if(boxKey == null) {
                 throw new IOException("Key is invalid");
             }
-            SecretKeySpec secretKey = new SecretKeySpec(boxKey.getBytes(), boxCiphersuite);
+            SecretKeySpec secretKey = new SecretKeySpec(boxKey.getBytes(), boxCiphersuite.split("/")[0]);
             cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
 
             int size = data.length;

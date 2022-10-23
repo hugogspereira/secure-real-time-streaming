@@ -58,7 +58,7 @@ public class DataInputDecryptStream {
 			if(movieKey == null) {
 				throw new IOException("Key is invalid");
 			}
-			SecretKeySpec secretKey = new SecretKeySpec(movieKey.getBytes(), movieCiphersuite);
+			SecretKeySpec secretKey = new SecretKeySpec(movieKey.getBytes(), movieCiphersuite.split("/")[0]);
 			cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
 
 			int size = data.length;
