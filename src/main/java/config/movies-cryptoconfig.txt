@@ -1,5 +1,5 @@
 <cars.dat.encrypted>
-ciphersuite: AES/OFB/NoPadding
+ciphersuite: AES/CTR/NoPADDING
 key:91342609ae5435f69a23652476e67abc
 iv: 4524568176123498
 integrity: SHA256

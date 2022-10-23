@@ -59,8 +59,8 @@ public class hjBox {
         SocketAddress inSocketAddress = parseSocketAddress(remote);
         Set<SocketAddress> outSocketAddressSet = Arrays.stream(destinations.split(",")).map(s -> parseSocketAddress(s)).collect(Collectors.toSet());
 
-	    SafeDatagramSocket inSocket = new SafeDatagramSocket(inSocketAddress, args[1]);
-        DatagramSocket outSocket = new DatagramSocket();
+	    DatagramSocket inSocket = new DatagramSocket(inSocketAddress);
+        SafeDatagramSocket outSocket = new SafeDatagramSocket(inSocketAddress, args[1]);
         byte[] buffer = new byte[4 * 1024];
 
         while (true) {
@@ -70,7 +70,7 @@ public class hjBox {
             System.out.print("*");
             for (SocketAddress outSocketAddress : outSocketAddressSet)
             {
-                outSocket.send(new DatagramPacket(buffer, inPacket.getLength(), outSocketAddress));
+                outSocket.sendEncrypt(new DatagramPacket(buffer, inPacket.getLength(), outSocketAddress));
           }
         }
     }

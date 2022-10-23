@@ -26,7 +26,7 @@ public class hjStreamServer {
 			byte[] buff = new byte[4 * 1024];
 
 			InetSocketAddress addr = new InetSocketAddress( args[2], Integer.parseInt(args[3]));
-			SafeDatagramSocket s = new SafeDatagramSocket(addr, args[4], args[0], args[1]);
+			SafeDatagramSocket s = new SafeDatagramSocket(addr, args[4]);
 			DatagramPacket p = new DatagramPacket(buff, buff.length, addr );
 			long t0 = System.nanoTime(); // tempo de referencia para este processo
 			long q0 = 0;
