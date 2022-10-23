@@ -33,7 +33,7 @@ package hjBox;
  *       Both configurable in the file config.properties
  */
 
-import java.io.FileInputStream;
+import java.io.ByteArrayInputStream;
 import java.net.*;
 import java.util.Arrays;
 import java.util.Properties;
@@ -41,13 +41,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.io.InputStream;
 import socket.SafeDatagramSocket;
+import crypto.PBEFileDecryption;
+import util.PrintStats;
 
 public class hjBox {
-    // TODO: Vai passar a ter config.properties e boxCryptoConfig
+
+    private static final String DEFAULT_ADDRESS = "0.0.0.0:0000";
+
     public static void main(String[] args) throws Exception {
-        InputStream inputStream = new FileInputStream(args[0]);
+        InputStream inputStream = new ByteArrayInputStream(PBEFileDecryption.decryptFiles(args[2], args[0]).toByteArray());
         if (inputStream == null) {
-            System.out.println("Erro, usar: myBox <config> <box-config>");
+            System.out.println("Erro, usar: myBox <config> <box-config> <password>");
             System.err.println("Configuration file not found!");
             System.exit(1);
         }
@@ -59,24 +63,34 @@ public class hjBox {
         SocketAddress inSocketAddress = parseSocketAddress(remote);
         Set<SocketAddress> outSocketAddressSet = Arrays.stream(destinations.split(",")).map(s -> parseSocketAddress(s)).collect(Collectors.toSet());
 
-	    SafeDatagramSocket inSocket = new SafeDatagramSocket(inSocketAddress, args[1]);
-        DatagramSocket outSocket = new DatagramSocket();
-        byte[] buffer = new byte[4 * 1024];
+	    DatagramSocket inSocket = new DatagramSocket(inSocketAddress);
+        SafeDatagramSocket outSocket = new SafeDatagramSocket(inSocketAddress, args[1], args[2]);
+        byte[] buffer = new byte[5 * 1024];
 
+        DatagramPacket p, inPacket; int count = 0; long afs = 0; long t0 = -1;
         while (true) {
-            DatagramPacket inPacket = new DatagramPacket(buffer, buffer.length);
+            inPacket = new DatagramPacket(buffer, buffer.length);
  	        inSocket.receive(inPacket);  // if remote is unicast
+            if(t0 == -1) {
+                if(inPacket.getLength() == 1) {
+                    t0 = System.nanoTime();
+                }
+                continue;
+            }
+            else if(inPacket.getLength() == 1) { break; }
 
-            System.out.print("*");
-            for (SocketAddress outSocketAddress : outSocketAddressSet)
-            {
-                outSocket.send(new DatagramPacket(buffer, inPacket.getLength(), outSocketAddress));
-          }
+            p = outSocket.decrypt(new DatagramPacket(inPacket.getData(), inPacket.getLength(), parseSocketAddress(DEFAULT_ADDRESS)));
+            for (SocketAddress outSocketAddress : outSocketAddressSet) {
+                outSocket.send(p, outSocketAddress);
+            }
+            count += 1; afs += inPacket.getLength();
         }
+        double totalTime = (double)(System.nanoTime()-t0)/1000000000;
+        outSocket.printBoxConfigStatus();
+        PrintStats.toPrintBoxStats(count, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs/totalTime);
     }
 
-    private static InetSocketAddress parseSocketAddress(String socketAddress) 
-    {
+    private static InetSocketAddress parseSocketAddress(String socketAddress) {
         String[] split = socketAddress.split(":");
         String host = split[0];
         int port = Integer.parseInt(split[1]);

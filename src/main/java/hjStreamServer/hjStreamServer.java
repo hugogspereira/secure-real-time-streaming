@@ -5,49 +5,64 @@ package hjStreamServer;
 * for clients to play in real time the transmitted movies
 */
 
-import java.io.*;
-import java.net.DatagramPacket;
-import java.net.InetSocketAddress;
-import socket.DataInputDecryptStream;
+import crypto.DecryptMovie;
 import socket.SafeDatagramSocket;
+import util.PrintStats;
+
+import java.io.DataInputStream;
+import java.net.*;
 
 public class hjStreamServer {
-	// TODO: Vai passar a ter moviesCryptoConfig e boxCryptoConfig
+
 	static public void main( String []args ) throws Exception {
-		if (args.length != 5) {
-				System.out.println("Erro, usar: mySend <movie> <movies-config> <ip-multicast-address> <port> <box-config>");
-	           	System.out.println("        or: mySend <movie> <movies-config> <ip-unicast-address> <port> <box-config>");
+		if (args.length != 6) {
+				System.out.println("Erro, usar: mySend <movie> <movies-config> <ip-multicast-address> <port> <box-config> <password>");
+	           	System.out.println("        or: mySend <movie> <movies-config> <ip-unicast-address> <port> <box-config> <password>");
 	           	System.exit(-1);
-			}
-			int size;
-			int count = 0;
-			long time;
-			DataInputStream g = (new DataInputDecryptStream( args[0], args[1]).getDataInputStream());
-			byte[] buff = new byte[4 * 1024];
-
-			InetSocketAddress addr = new InetSocketAddress( args[2], Integer.parseInt(args[3]));
-			SafeDatagramSocket s = new SafeDatagramSocket(addr, args[4], args[0], args[1]);
-			DatagramPacket p = new DatagramPacket(buff, buff.length, addr );
-			long t0 = System.nanoTime(); // tempo de referencia para este processo
-			long q0 = 0;
-
-			while ( g.available() > 0 ) {
-				size = g.readShort();
-				time = g.readLong();
-				if ( count == 0 ) q0 = time;
-				count += 1;
-				g.readFully(buff, 0, size);
-				p.setData(buff, 0, size );
-				p.setSocketAddress( addr );
-				long t = System.nanoTime();
-				Thread.sleep( Math.max(0, ((time-q0)-(t-t0))/1000000) );
-		   
-		        // send packet (with a frame payload)
-			    s.send(p);
-			    System.out.print( "." );
 		}
 
-		System.out.println("DONE! all frames sent: "+count);
+		int size;
+		int count = -1;
+		long time;
+		DataInputStream g = (new DecryptMovie(args[0], args[1], args[5]).getDataInputStream());
+		// new DataInputStream( new FileInputStream(args[0]) );
+		// (new DecryptMovie(args[0], args[1], args[5]).getDataInputStream());
+
+		byte[] buff = new byte[4 * 1024];
+
+		InetSocketAddress addr = new InetSocketAddress( args[2], Integer.parseInt(args[3]));
+
+		SafeDatagramSocket s = new SafeDatagramSocket(addr, args[4], args[5]);
+		/*SafeMulticastSocket mS = new SafeMulticastSocket(Integer.parseInt(args[3]), addr, args[4], args[5]);
+		mS.joinGroup(InetAddress.getByName(args[2]));*/
+
+		DatagramPacket p = new DatagramPacket(buff, buff.length, addr);
+		long t0 = System.nanoTime(), q0 = 0, afs = 0;
+
+		while ( g.available() > 0 ) {
+			if(count == -1) { s.send(new DatagramPacket(SafeDatagramSocket.CONTROL_MESSAGE, SafeDatagramSocket.CONTROL_MESSAGE.length, addr)); count++; continue; }
+			size = g.readShort();
+			time = g.readLong();
+			if ( count == 0 ) q0 = time;
+			count += 1;
+			g.readFully(buff, 0, size);
+			p.setData(buff);
+			p.setSocketAddress( addr );
+			p = s.encrypt(p);
+			afs += p.getLength();
+
+			long t = System.nanoTime();
+			Thread.sleep( Math.max(0, ((time-q0)-(t-t0))/1000000) );
+
+			// send packet (with a frame payload)
+			s.send(p);
+			/*mS.send(p);*/
+		}
+		double totalTime = (double)(System.nanoTime()-t0)/1000000000;
+
+		s.send(new DatagramPacket(SafeDatagramSocket.CONTROL_MESSAGE, SafeDatagramSocket.CONTROL_MESSAGE.length, addr));
+		s.printServerConfigStatus();
+		PrintStats.toPrintServerStats(count, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs/totalTime);
 	}
 
 }

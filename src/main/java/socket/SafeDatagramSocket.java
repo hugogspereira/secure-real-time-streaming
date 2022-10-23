@@ -9,37 +9,36 @@ import java.net.*;
 import java.security.*;
 import java.util.Properties;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import util.PrintStats;
 
-public class SafeDatagramSocket extends DatagramSocket {
+public class SafeDatagramSocket {
 
     private static final String CIPHERSUITE = "CIPHERSUITE";
     private static final String KEY = "KEY";
     private static final String IV = "IV";
     private static final String INTEGRITY = "INTEGRITY";
     private static final String MACKEY = "MACKEY";
+    public static final byte[] CONTROL_MESSAGE = new byte[1];
 
-    private String boxCiphersuite, boxKey, boxIv, boxIntegrity, boxMackey;
-    private String movieCiphersuite, movieKey, movieIv, movieIntegrity, movieMackey;
+    private String boxCiphersuite, boxKey, boxIv, boxIntegrity, boxMackey, addr;
+    private Cipher cipher;
+    private DatagramSocket datagramSocket;
 
-    public SafeDatagramSocket() throws SocketException {
-        super();
+    public SafeDatagramSocket(SocketAddress addr, String config, String password) throws SocketException {
+        this.datagramSocket = new DatagramSocket();
+        readProperties(addr, config, password);
     }
 
-    public SafeDatagramSocket(SocketAddress addr, String config) throws SocketException {
-        super(addr);
-        readProperties(addr, config, null, null);
+    public SafeDatagramSocket(InetSocketAddress addr, String boxConfig, String password) throws SocketException {
+        this.datagramSocket = new DatagramSocket();
+        readProperties(addr, boxConfig, password);
     }
 
-    public SafeDatagramSocket(InetSocketAddress addr, String boxConfig, String movieName, String moviesConfig) throws SocketException {
-        readProperties(addr, boxConfig, movieName, moviesConfig);
-    }
-
-    private void readProperties(SocketAddress addr, String boxConfig, String movieName, String moviesConfig) throws SocketException {
+    private void readProperties(SocketAddress addr, String boxConfig, String password) throws SocketException {
         Security.addProvider(new BouncyCastleProvider());
 
         try {
-            String propsFileName = ConfigReader.read(boxConfig, addr.toString().split("/")[1]);
-            InputStream inputStream = new FileInputStream(ConfigReader.CONFIG_PATH+propsFileName);
+            InputStream inputStream = new ByteArrayInputStream(ConfigReader.read(boxConfig, addr.toString().split("/")[1], password).toByteArray());
             if (inputStream == null) {
                 System.err.println("Configuration Box file not found!");
                 System.exit(1);
@@ -47,45 +46,22 @@ public class SafeDatagramSocket extends DatagramSocket {
             Properties properties = new Properties();
             properties.load(inputStream);
 
-            System.out.println("-----------------\nBOX");
             this.boxCiphersuite = checkProperty(properties,CIPHERSUITE);
+            this.cipher = Cipher.getInstance(boxCiphersuite);
             this.boxKey = checkProperty(properties,KEY);
             this.boxIv = checkProperty(properties,IV);
             this.boxIntegrity = checkProperty(properties,INTEGRITY);
             this.boxMackey = checkProperty(properties,MACKEY);
+            this.addr = addr.toString();
 
+            /*
             System.out.println(boxCiphersuite);
             System.out.println(boxKey);
             System.out.println(boxIv);
             System.out.println(boxIntegrity);
             System.out.println(boxMackey);
             System.out.println("-----------------");
-
-            if(movieName != null) {
-                String[] path = movieName.split("/");
-                propsFileName = ConfigReader.read(moviesConfig, path[path.length-1]);
-                inputStream = new FileInputStream(ConfigReader.CONFIG_PATH+propsFileName);
-                if (inputStream == null) {
-                    System.err.println("Configuration Movie file not found!");
-                    System.exit(1);
-                }
-                properties = new Properties();
-                properties.load(inputStream);
-
-                System.out.println("-----------------\nMOVIE");
-                this.movieCiphersuite = checkProperty(properties,CIPHERSUITE);
-                this.movieKey = checkProperty(properties,KEY);
-                this.movieIv = checkProperty(properties,IV);
-                this.movieIntegrity = checkProperty(properties,INTEGRITY);
-                this.movieMackey = checkProperty(properties,MACKEY);
-
-                System.out.println(movieCiphersuite);
-                System.out.println(movieKey);
-                System.out.println(movieIv);
-                System.out.println(movieIntegrity);
-                System.out.println(movieMackey);
-                System.out.println("-----------------");
-            }
+            */
         } catch (Exception e) {
             e.printStackTrace();
             throw new SocketException(e.getMessage());
@@ -100,30 +76,41 @@ public class SafeDatagramSocket extends DatagramSocket {
         return res;
     }
 
-    public void send(DatagramPacket p) throws IOException {   // Encrypt
-        // Depois envia-se o data packet com os dados encriptados !
-        byte[] data = p.getData();
+    public DatagramPacket encrypt(DatagramPacket p) throws IOException {   // Encrypt
         try {
+            byte[] data = p.getData();
             if(boxCiphersuite == null){
                 throw new IOException("Ciphersuite is invalid");
             }
-            Cipher cipher = Cipher.getInstance(boxCiphersuite);
+            String[] transformation= boxCiphersuite.split("/");
+            String mode = null;
+            if(transformation.length > 1) {
+                mode = transformation[1];
+            }
             if(boxIv == null) {
                 throw new IOException("Iv is invalid");
             }
+            if(mode != null && mode.equalsIgnoreCase("CCM")) {
+                if(boxIv.getBytes().length < 7 || boxIv.getBytes().length > 13) {
+                    throw new IOException("With CCM mode the iv should be between 7 and 13 bytes");
+                }
+                else if(boxMackey == null) {
+                    throw new IOException("With CCM mode the mac is necessary");
+                }
+            }
             IvParameterSpec ivSpec = new IvParameterSpec(boxIv.getBytes());
+
             if(boxKey == null) {
                 throw new IOException("Key is invalid");
             }
-            SecretKeySpec secretKey = new SecretKeySpec(boxKey.getBytes(), boxCiphersuite.split("/")[0]); // Necessário split? Testar!
+            SecretKey secretKey = new SecretKeySpec(boxKey.getBytes(), 0, boxKey.getBytes().length, boxCiphersuite.split("/")[0]);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
 
             int size = data.length;
-            byte[] encryptedData;
+            int integritySize, ctLength;
+            byte[] cipherText, integrityData;
 
             if(boxIntegrity != null) {
-                int integritySize, ctLength;
-                byte[] cipherText, integrityData;
                 if(boxMackey == null) {
                     MessageDigest hash = MessageDigest.getInstance(boxIntegrity);
                     integritySize = hash.getDigestLength();
@@ -147,50 +134,55 @@ public class SafeDatagramSocket extends DatagramSocket {
                     integrityData = hMac.doFinal();
                 }
                 cipher.doFinal(integrityData, 0, integritySize, cipherText, ctLength);
-                // TODO: See if size has become to small (Fazer isto?)
-                if(p.getLength() < ctLength) {
-                    p.setLength(ctLength);
-                    p.setData(cipherText);
-                }
+
+                p.setData(cipherText);
+                p.setLength(cipherText.length);
+                return p;
+            }
+            else if((mode != null && mode.equalsIgnoreCase("GCM")) || (transformation[0].equalsIgnoreCase("ChaCha20-Poly1305"))) {
+                cipherText = cipher.doFinal(data);
+                p.setData(cipherText);
+                p.setLength(cipherText.length);
+                return p;
             }
             else {
-                // É suposto ser uma excepção ? N percebi bem, supostamente no enunciado diz q só pode ser ou uma ou outra, mas a config de exemplo n tem nehnhuma.
-                // Perguntar ao Professor
                 throw new IOException("Not defined the integrity control in config file!");
-                // Frames without integrity verification must be discarded, avoiding to send invalid frames to the media player
             }
-            super.send(p);
         }
         catch (NoSuchAlgorithmException e) {
             throw new IOException("Send Encrypted data has failed! No such algorithm exception", e);
         }
-        catch (NoSuchPaddingException e) {
-            throw new IOException("Send Encrypted data has failed! No such padding exception", e);
-        }
         catch (InvalidKeyException e) {
             throw new IOException("Send Encrypted data has failed! Invalid key exception", e);
-        }
-        catch (BadPaddingException e) {
-            throw new IOException("Send Encrypted data has failed! Bad padding exception", e);
-        }
-        catch (IllegalBlockSizeException e) {
-            throw new IOException("Send Encrypted data has failed! Illegal block size exception", e);
         }
         catch (InvalidAlgorithmParameterException e) {
             throw new IOException("Send Encrypted data has failed! Invalid algorithm parameter exception", e);
         }
+        catch (IllegalBlockSizeException e) {
+            throw new IOException(e);
+        }
+        catch (BadPaddingException e) {
+            throw new IOException(e);
+        }
+        catch (IOException e) {
+            throw new IOException(e);
+        }
         catch (ShortBufferException e) {
-            throw new IOException("Send Encrypted data has failed! Buffer is to short exception", e);
+            throw new IOException(e);
         }
     }
 
-    public void receive(DatagramPacket p) throws IOException { // Decrypt
-        byte[] movieData, data = p.getData();
+    public DatagramPacket decrypt(DatagramPacket p) throws IOException { // Decrypt
         try {
+            byte[] movieData, data = p.getData();
             if(boxCiphersuite == null){
                 throw new IOException("Ciphersuite is invalid");
             }
-            Cipher cipher = Cipher.getInstance(boxCiphersuite);
+            String[] transformation= boxCiphersuite.split("/");
+            String mode = null;
+            if(transformation.length > 1) {
+                mode = transformation[1];
+            }
             if(boxIv == null) {
                 throw new IOException("Iv is invalid");
             }
@@ -198,18 +190,18 @@ public class SafeDatagramSocket extends DatagramSocket {
             if(boxKey == null) {
                 throw new IOException("Key is invalid");
             }
-            SecretKeySpec secretKey = new SecretKeySpec(boxKey.getBytes(), boxCiphersuite);
+            SecretKey secretKey = new SecretKeySpec(boxKey.getBytes(), 0, boxKey.getBytes().length, boxCiphersuite.split("/")[0]);
             cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
 
-            int size = data.length;
+            int size = p.getLength();
+            byte[] decryptedData, messageIntegrity;
+            int messageLength;
 
             if(boxIntegrity != null) {
-                byte[] decryptedData, messageIntegrity;
-                int messageLength;
-                if(boxMackey == null) {
+                if (boxMackey == null) {
                     MessageDigest hash = MessageDigest.getInstance(boxIntegrity);
 
-                    decryptedData = cipher.doFinal(data);
+                    decryptedData = cipher.doFinal(data, 0, size);
                     messageLength = decryptedData.length - hash.getDigestLength();
                     movieData = new byte[messageLength];
                     hash.update(decryptedData, 0, messageLength);
@@ -217,8 +209,12 @@ public class SafeDatagramSocket extends DatagramSocket {
                     messageIntegrity = new byte[hash.getDigestLength()];
                     System.arraycopy(decryptedData, messageLength, messageIntegrity, 0, messageIntegrity.length);
 
-                    if(MessageDigest.isEqual(hash.digest(), messageIntegrity)) {
+                    if (MessageDigest.isEqual(hash.digest(), messageIntegrity)) {
                         System.arraycopy(decryptedData, 0, movieData, 0, messageLength);
+                    }
+                    else {
+                        // TODO
+                        System.out.println("ERROR 230");
                     }
                 }
                 else {
@@ -235,41 +231,63 @@ public class SafeDatagramSocket extends DatagramSocket {
                     messageIntegrity = new byte[hMac.getMacLength()];
                     System.arraycopy(decryptedData, messageLength, messageIntegrity, 0, messageIntegrity.length);
 
-                    if(MessageDigest.isEqual(hMac.doFinal(), messageIntegrity)) {
+                    if (MessageDigest.isEqual(hMac.doFinal(), messageIntegrity)) {
                         System.arraycopy(decryptedData, 0, movieData, 0, messageLength);
                     }
+                    else {
+                        // TODO
+                        System.out.println("ERROR 251");
+                    }
                 }
+                p.setData(movieData);
+                p.setLength(movieData.length);
+                return p;
+            }
+            else if((mode != null && mode.equalsIgnoreCase("GCM")) || (transformation[0].equalsIgnoreCase("ChaCha20-Poly1305"))) {
+                decryptedData = cipher.doFinal(data, 0, size);
+                p.setData(decryptedData);
+                p.setLength(decryptedData.length);
+                return p;
             }
             else {
-                // É suposto ser uma excepção ? N percebi bem, supostamente no enunciado diz q só pode ser ou uma ou outra, mas a config de exemplo n tem nehnhuma.
-                // Perguntar ao Professor
                 throw new IOException("Not defined the integrity control in config file!");
-                // "Frames without integrity verification must be discarded, avoiding to send invalid frames to the media player"
             }
         }
         catch (NoSuchAlgorithmException e) {
             throw new IOException("Receive Encrypted data has failed! No such algorithm exception", e);
         }
-        catch (NoSuchPaddingException e) {
-            throw new IOException("Receive Encrypted data has failed! No such padding exception", e);
-        }
         catch (InvalidKeyException e) {
             throw new IOException("Receive Encrypted data has failed! Invalid key exception", e);
-        }
-        catch (BadPaddingException e) {
-            throw new IOException("Receive Encrypted data has failed! Bad padding exception", e);
-        }
-        catch (IllegalBlockSizeException e) {
-            throw new IOException("Receive Encrypted data has failed! Illegal block size exception", e);
         }
         catch (InvalidAlgorithmParameterException e) {
             throw new IOException("Receive Encrypted data has failed! Invalid algorithm parameter exception", e);
         }
-        // TODO: Fazer setLength() ?
-        if(p.getLength() < movieData.length) {
-            p.setLength(movieData.length);
-            p.setData(movieData);
+        catch (IllegalBlockSizeException e) {
+            throw new IOException(e);
         }
-        super.receive(p);
+        catch (BadPaddingException e) {
+            throw new IOException(e);
+        }
+        catch (IOException e) {
+            throw new IOException(e);
+        }
     }
+
+    public void send(DatagramPacket p, SocketAddress addr) throws IOException {
+        p.setSocketAddress(addr);
+        datagramSocket.send(p);
+    }
+
+    public void send(DatagramPacket p) throws IOException {
+        datagramSocket.send(p);
+    }
+
+    public void printBoxConfigStatus() {
+        PrintStats.toPrintBoxConfigStats(addr, boxCiphersuite, boxKey, boxKey.length(), boxIntegrity);
+    }
+
+    public void printServerConfigStatus() {
+        PrintStats.toPrintServerConfigStats(addr, boxCiphersuite, boxKey, boxKey.length(), boxIntegrity);
+    }
+
 }
