@@ -62,7 +62,7 @@ public class SafeDatagramSocket extends DatagramSocket {
     public void send(DatagramPacket p) throws IOException { // Encrypt
         byte[] cipherText = p.getData();
         try {
-        cipherText = CryptoStuff.encrypt(cipherText, cipher);
+        cipherText = CryptoStuff.encrypt(cipherText, cipher, properties);
         } catch (Exception e) {
         e.printStackTrace();
         }
@@ -74,7 +74,7 @@ public class SafeDatagramSocket extends DatagramSocket {
     public void sendEncrypt(DatagramPacket p) throws IOException { // Decrypt
         byte[] movieData = p.getData();
         try {
-            movieData = CryptoStuff.decrypt(movieData, cipher);
+            movieData = CryptoStuff.decrypt(movieData, cipher, properties);
         } catch (Exception e) {
             e.printStackTrace();
         }
