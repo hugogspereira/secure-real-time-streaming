@@ -29,12 +29,11 @@ public class MovieDecriptor {
 
     public MovieDecriptor(){}
 
-    public static byte[] decrypt(String moviesConfig, String movieName) throws Exception{
+    /*public static byte[] decrypt(String moviesConfig, String movieName) throws Exception{
 
         String[] path = movieName.split("/");
-        String propsFileName = ConfigReader.read(moviesConfig, path[path.length-1]);
         //System.out.println(Utils.CONFIG_PATH+propsFileName);
-        FileInputStream inputStream = new FileInputStream(ConfigReader.CONFIG_PATH+propsFileName);
+        FileInputStream inputStream = new FileInputStream(ConfigReader.read(moviesConfig, path[path.length-1]).toByteArray());
         
         Properties properties = new Properties();
         properties.load(inputStream);
@@ -161,4 +160,5 @@ public class MovieDecriptor {
         }
         return res;
     }
+     */
 }

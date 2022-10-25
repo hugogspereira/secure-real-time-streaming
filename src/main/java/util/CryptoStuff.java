@@ -10,7 +10,6 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.Security;
 import java.util.Properties;
 import java.io.IOException;
@@ -24,38 +23,51 @@ public class CryptoStuff {
     private static final String INTEGRITY = "INTEGRITY";
     private static final String MACKEY = "MACKEY";
 
-    public static byte[] encrypt(byte[] data, Cipher cipher, Properties props) throws IOException {
+    public static byte[] encrypt(byte[] data, int size, Cipher cipher, Properties props) throws IOException {
         String integrity = checkProperty(props, INTEGRITY);
         String mackey = checkProperty(props, MACKEY);
+        String ciphersuite = checkProperty(props, CIPHERSUITE);
+        String[] transformation = ciphersuite.split("/");
+        String mode = null;
+        if (transformation.length > 1) {
+            mode = transformation[1];
+        }
 
-        int size = data.length;
         int integritySize, ctLength;
         byte[] cipherText, integrityData;
 
         try {
-            if (integrity != null) {
-                MessageDigest hash = MessageDigest.getInstance(integrity);
-                integritySize = hash.getDigestLength();
 
-                cipherText = new byte[cipher.getOutputSize(size + integritySize)];
-                ctLength = cipher.update(data, 0, size, cipherText, 0);
-
-                hash.update(data);
-                integrityData = hash.digest();
-            } else {
-                Mac hMac = Mac.getInstance(mackey);
-                Key hMacKey = new SecretKeySpec(checkProperty(props, KEY).getBytes(), mackey);
-                hMac.init(hMacKey);
-                integritySize = hMac.getMacLength();
-
-                cipherText = new byte[cipher.getOutputSize(size + integritySize)];
-                ctLength = cipher.update(data, 0, size, cipherText, 0);
-
-                hMac.update(data);
-                integrityData = hMac.doFinal();
+            if (mode != null && mode.equalsIgnoreCase("GCM")
+                    || transformation[0].equalsIgnoreCase("ChaCha20-Poly1305")) {
+                return cipher.doFinal(data);
             }
-            cipher.doFinal(integrityData, 0, integritySize, cipherText, ctLength);
-        
+            if (integrity != null || mackey != null) {
+                if (integrity != null) {
+                    MessageDigest hash = MessageDigest.getInstance(integrity);
+                    integritySize = hash.getDigestLength();
+
+                    cipherText = new byte[cipher.getOutputSize(size + integritySize)];
+                    ctLength = cipher.update(data, 0, size, cipherText, 0);
+
+                    hash.update(data);
+                    integrityData = hash.digest();
+                } else {
+                    Mac hMac = Mac.getInstance(mackey);
+                    Key hMacKey = new SecretKeySpec(checkProperty(props, KEY).getBytes(), mackey);
+                    hMac.init(hMacKey);
+                    integritySize = hMac.getMacLength();
+
+                    cipherText = new byte[cipher.getOutputSize(size + integritySize)];
+                    ctLength = cipher.update(data, 0, size, cipherText, 0);
+
+                    hMac.update(data);
+                    integrityData = hMac.doFinal();
+                }
+                cipher.doFinal(integrityData, 0, integritySize, cipherText, ctLength);
+            }
+            else return cipher.doFinal(data, 0, size);
+
         } catch (BadPaddingException e) {
             throw new IOException("Encript data has failed! Bad padding exception", e);
         } catch (IllegalBlockSizeException e) {
@@ -68,24 +80,32 @@ public class CryptoStuff {
             throw new IOException("Encript data has failed! Invalid Mac key Exeption", e);
         }
 
-    
         return cipherText;
     }
 
-    public static byte[] decrypt(byte[] data, Cipher cipher, Properties props) throws IOException{
+    public static byte[] decrypt(byte[] data, int size, Cipher cipher, Properties props) throws IOException {
         String integrity = checkProperty(props, INTEGRITY);
         String mackey = checkProperty(props, MACKEY);
+        String ciphersuite = checkProperty(props, CIPHERSUITE);
+        String[] transformation = ciphersuite.split("/");
+        String mode = null;
+        if (transformation.length > 1) {
+            mode = transformation[1];
+        }
 
-        int size = data.length;
         byte[] decryptedData, messageIntegrity, realData;
         int messageLength;
-        
-        try{
-                
-                if(integrity != null) {
+
+        try {
+            if (mode != null && mode.equalsIgnoreCase("GCM")
+                    || transformation[0].equalsIgnoreCase("ChaCha20-Poly1305")) {
+                return cipher.doFinal(data, 0, size);
+            }
+            if (integrity != null || mackey != null) {
+                if (integrity != null) {
                     MessageDigest hash = MessageDigest.getInstance(integrity);
 
-                    decryptedData = cipher.doFinal(data);
+                    decryptedData = cipher.doFinal(data, 0, size);
                     messageLength = decryptedData.length - hash.getDigestLength();
                     realData = new byte[messageLength];
                     hash.update(decryptedData, 0, messageLength);
@@ -93,14 +113,12 @@ public class CryptoStuff {
                     messageIntegrity = new byte[hash.getDigestLength()];
                     System.arraycopy(decryptedData, messageLength, messageIntegrity, 0, messageIntegrity.length);
 
-                    if(MessageDigest.isEqual(hash.digest(), messageIntegrity)) {
+                    if (MessageDigest.isEqual(hash.digest(), messageIntegrity)) {
                         System.arraycopy(decryptedData, 0, realData, 0, messageLength);
-                    }
-                    else { // Não mandar o packet! Integrity check failed!
+                    } else { // Não mandar o packet! Integrity check failed!
                         throw new IOException("Integrity check failed!");
                     }
-                }
-                else {
+                } else {
                     Mac hMac = Mac.getInstance(mackey);
                     Key hMacKey = new SecretKeySpec(checkProperty(props, KEY).getBytes(), mackey);
 
@@ -114,26 +132,24 @@ public class CryptoStuff {
                     messageIntegrity = new byte[hMac.getMacLength()];
                     System.arraycopy(decryptedData, messageLength, messageIntegrity, 0, messageIntegrity.length);
 
-                    if(MessageDigest.isEqual(hMac.doFinal(), messageIntegrity)) {
+                    if (MessageDigest.isEqual(hMac.doFinal(), messageIntegrity)) {
                         System.arraycopy(decryptedData, 0, realData, 0, messageLength);
-                    }
-                    else {  // Não mandar o packet! Integrity check failed!
+                    } else { // Não mandar o packet! Integrity check failed!
                         throw new IOException("Integrity check failed!");
                     }
-            }
+                }
+            } else
+                realData = cipher.doFinal(data, 0, size);
+
             return realData;
 
-        }
-        catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             throw new IOException("Receive Encrypted data has failed! No such algorithm exception", e);
-        }
-        catch (InvalidKeyException e) {
+        } catch (InvalidKeyException e) {
             throw new IOException("Receive Encrypted data has failed! Invalid key exception", e);
-        }
-        catch (BadPaddingException e) {
+        } catch (BadPaddingException e) {
             throw new IOException("Receive Encrypted data has failed! Bad padding exception", e);
-        }
-        catch (IllegalBlockSizeException e) {
+        } catch (IllegalBlockSizeException e) {
             throw new IOException("Receive Encrypted data has failed! Illegal block size exception", e);
         }
     }

@@ -24,6 +24,12 @@
             <artifactId>bcpkix-jdk18on</artifactId>
             <version>1.72</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>1.4</version>
+        </dependency>
     </dependencies>
 
     <build>
