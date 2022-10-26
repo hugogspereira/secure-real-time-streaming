@@ -46,13 +46,13 @@ Adversary model and typology of threats for which you must implement countermeas
 ## Run/Debug Configurations
 
 HjStreamServer:
-- HjStreamServer <movie> <movies-config> <ip-multicast-address> <port> <box-config> <password>
+- HjStreamServer "movie" "movies-config" "ip-multicast-address" "port" "box-config" "password"
 
 HjBox:
-- HjBox <config> <box-config> <password>
+- HjBox "config" "box-config" "password"
 
 EncryptMovies:
-- EncryptMovies <movie> <movies-config>
+- EncryptMovies "movie" "movies-config"
 
 PBEFileEncryption:
-- PBEFileEncryption <config> <password>
+- PBEFileEncryption "config" "password"
