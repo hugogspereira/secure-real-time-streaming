@@ -60,10 +60,17 @@ public class hjBox {
 	    String remote = properties.getProperty("remote");
         String destinations = properties.getProperty("localdelivery");
 
-        SocketAddress inSocketAddress = parseSocketAddress(remote);
+        InetSocketAddress inSocketAddress = parseSocketAddress(remote);
         Set<SocketAddress> outSocketAddressSet = Arrays.stream(destinations.split(",")).map(s -> parseSocketAddress(s)).collect(Collectors.toSet());
 
-	    DatagramSocket inSocket = new DatagramSocket(inSocketAddress);
+        DatagramSocket inSocket;
+        if(inSocketAddress.getAddress().isMulticastAddress()){
+            MulticastSocket inSocketTemp = new MulticastSocket(inSocketAddress.getPort());
+            inSocketTemp.joinGroup(inSocketAddress, null);
+            inSocket = inSocketTemp;
+        }
+	    else 
+            inSocket = new DatagramSocket(inSocketAddress);
         SafeDatagramSocket outSocket = new SafeDatagramSocket(inSocketAddress, args[1], args[2]);
         byte[] buffer = new byte[5 * 1024];
 

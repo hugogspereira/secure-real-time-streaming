@@ -28,13 +28,22 @@ public class SafeDatagramSocket {
     private DatagramSocket datagramSocket;
 
     public SafeDatagramSocket(SocketAddress addr, String config, String password) throws IOException {
+        
         this.datagramSocket = new DatagramSocket();
-        readProperties(addr, config, password, Cipher.ENCRYPT_MODE);
+        
+        readProperties(addr, config, password, Cipher.DECRYPT_MODE);
     }
 
     public SafeDatagramSocket(InetSocketAddress addr, String boxConfig, String password) throws IOException {
-        this.datagramSocket = new DatagramSocket();
-        readProperties(addr, boxConfig, password, Cipher.DECRYPT_MODE);
+        if(addr.getAddress().isMulticastAddress()){
+            MulticastSocket datagramSocket = new MulticastSocket(addr.getPort());
+            datagramSocket.joinGroup(addr, null); 
+            this.datagramSocket = datagramSocket;
+        }
+        else 
+            this.datagramSocket = new DatagramSocket();
+
+        readProperties(addr, boxConfig, password, Cipher.ENCRYPT_MODE);
     }
 
     private void readProperties(SocketAddress addr, String boxConfig, String password, int cipherMode)

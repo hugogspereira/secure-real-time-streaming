@@ -24,6 +24,8 @@ public class CryptoStuff {
     private static final String MACKEY = "MACKEY";
 
     public static byte[] encrypt(byte[] data, int size, Cipher cipher, Properties props) throws IOException {
+        Security.addProvider(new BouncyCastlePQCProvider());
+
         String integrity = checkProperty(props, INTEGRITY);
         String mackey = checkProperty(props, MACKEY);
         String ciphersuite = checkProperty(props, CIPHERSUITE);
@@ -84,6 +86,8 @@ public class CryptoStuff {
     }
 
     public static byte[] decrypt(byte[] data, int size, Cipher cipher, Properties props) throws IOException {
+        Security.addProvider(new BouncyCastlePQCProvider());
+
         String integrity = checkProperty(props, INTEGRITY);
         String mackey = checkProperty(props, MACKEY);
         String ciphersuite = checkProperty(props, CIPHERSUITE);
