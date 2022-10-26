@@ -170,7 +170,7 @@ public class SafeDatagramSocket {
         if (boxIntegrity == null)
             boxIntegrity = checkProperty(properties, MACKEY);
         PrintStats.toPrintServerConfigStats(addr, checkProperty(properties, CIPHERSUITE), boxKey, boxKey.length(), boxIntegrity);
-        PrintStats.toPrintServerStats(count, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs/totalTime);
+        PrintStats.toPrintServerStats(count, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs*1000/totalTime);
     }
 
 }
