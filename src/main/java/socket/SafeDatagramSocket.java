@@ -5,7 +5,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import util.ConfigReader;
 import util.CryptoStuff;
-
 import java.io.*;
 import java.net.*;
 import java.security.*;
@@ -21,6 +20,7 @@ public class SafeDatagramSocket {
     private static final String INTEGRITY = "INTEGRITY";
     private static final String MACKEY = "MACKEY";
     public static final byte[] CONTROL_MESSAGE = new byte[1];
+    public static final String DEFAULT_ADDRESS = "0.0.0.0:0000";
 
     private String addr;
     private Cipher cipher;
@@ -28,9 +28,8 @@ public class SafeDatagramSocket {
     private DatagramSocket datagramSocket;
 
     public SafeDatagramSocket(SocketAddress addr, String config, String password) throws IOException {
-        
         this.datagramSocket = new DatagramSocket();
-        
+
         readProperties(addr, config, password, Cipher.DECRYPT_MODE);
     }
 
@@ -102,16 +101,15 @@ public class SafeDatagramSocket {
         } catch (InvalidAlgorithmParameterException e) {
             throw new IOException("Send Encrypted data has failed! Invalid algorithm parameter exception", e);
         } catch (IllegalBlockSizeException e) {
-            throw new IOException(e);
+            throw new IOException("Send Encrypted data has failed! Illegal block size exception", e);
         } catch (BadPaddingException e) {
-            throw new IOException(e);
-        } catch (IOException e) {
-            throw new IOException(e);
+            throw new IOException("Send Encrypted data has failed! Bad padding exception", e);
         } catch (ShortBufferException e) {
-            throw new IOException(e);
+            throw new IOException("Send Encrypted data has failed! Short buffer exception", e);
+        } catch (NoSuchPaddingException e) {
+            throw new IOException("Send Encrypted data has failed! No such padding exception", e);
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new SocketException(e.getMessage());
+            throw new IOException(e);
         }
     }
 
@@ -157,22 +155,22 @@ public class SafeDatagramSocket {
         datagramSocket.send(p);
     }
 
-    public void printBoxConfigStatus() {
+    public void printBoxConfigStatus(int count, long afs, double totalTime) {
         String boxKey = checkProperty(properties, KEY);
         String boxIntegrity = checkProperty(properties, INTEGRITY);
         if (boxIntegrity == null)
             boxIntegrity = checkProperty(properties, MACKEY);
-        PrintStats.toPrintBoxConfigStats(addr, checkProperty(properties, CIPHERSUITE), boxKey, boxKey.length(),
-                boxIntegrity);
+        PrintStats.toPrintBoxConfigStats(addr, checkProperty(properties, CIPHERSUITE), boxKey, boxKey.length(), boxIntegrity);
+        PrintStats.toPrintBoxStats(count, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs*1000/totalTime);
     }
 
-    public void printServerConfigStatus() {
+    public void printServerConfigStatus(int count, long afs, double totalTime) {
         String boxKey = checkProperty(properties, KEY);
         String boxIntegrity = checkProperty(properties, INTEGRITY);
         if (boxIntegrity == null)
             boxIntegrity = checkProperty(properties, MACKEY);
-        PrintStats.toPrintServerConfigStats(addr, checkProperty(properties, CIPHERSUITE), boxKey, boxKey.length(),
-                boxIntegrity);
+        PrintStats.toPrintServerConfigStats(addr, checkProperty(properties, CIPHERSUITE), boxKey, boxKey.length(), boxIntegrity);
+        PrintStats.toPrintServerStats(count, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs/totalTime);
     }
 
 }

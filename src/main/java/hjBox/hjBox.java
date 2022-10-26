@@ -42,11 +42,8 @@ import java.util.stream.Collectors;
 import java.io.InputStream;
 import socket.SafeDatagramSocket;
 import crypto.PBEFileDecryption;
-import util.PrintStats;
 
 public class hjBox {
-
-    private static final String DEFAULT_ADDRESS = "0.0.0.0:0000";
 
     public static void main(String[] args) throws Exception {
         InputStream inputStream = new ByteArrayInputStream(PBEFileDecryption.decryptFiles(args[2], args[0]).toByteArray());
@@ -68,33 +65,28 @@ public class hjBox {
             MulticastSocket inSocketTemp = new MulticastSocket(inSocketAddress.getPort());
             inSocketTemp.joinGroup(inSocketAddress, null);
             inSocket = inSocketTemp;
-        }
-	    else 
+        } else {
             inSocket = new DatagramSocket(inSocketAddress);
+        }
         SafeDatagramSocket outSocket = new SafeDatagramSocket(inSocketAddress, args[1], args[2]);
         byte[] buffer = new byte[5 * 1024];
 
-        DatagramPacket p, inPacket; int count = 0; long afs = 0; long t0 = -1;
+        DatagramPacket p, inPacket; int count = 0; long afs = 0, t0 = -1;
         while (true) {
             inPacket = new DatagramPacket(buffer, buffer.length);
  	        inSocket.receive(inPacket);  // if remote is unicast
             if(t0 == -1) {
-                if(inPacket.getLength() == 1) {
-                    t0 = System.nanoTime();
-                }
-                continue;
+                if(inPacket.getLength() == 1) { t0 = System.nanoTime(); } continue;
             }
             else if(inPacket.getLength() == 1) { break; }
 
-            p = outSocket.decrypt(new DatagramPacket(inPacket.getData(), inPacket.getLength(), parseSocketAddress(DEFAULT_ADDRESS)));
+            p = outSocket.decrypt(new DatagramPacket(inPacket.getData(), inPacket.getLength(), parseSocketAddress(SafeDatagramSocket.DEFAULT_ADDRESS)));
             for (SocketAddress outSocketAddress : outSocketAddressSet) {
                 outSocket.send(p, outSocketAddress);
             }
             count += 1; afs += inPacket.getLength();
         }
-        double totalTime = (double)(System.nanoTime()-t0)/1000000000;
-        outSocket.printBoxConfigStatus();
-        PrintStats.toPrintBoxStats(count, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs/totalTime);
+        outSocket.printBoxConfigStatus(count, afs, (double)(System.nanoTime()-t0)/1000000000);
     }
 
     private static InetSocketAddress parseSocketAddress(String socketAddress) {
