@@ -5,6 +5,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import util.ConfigReader;
 import util.CryptoStuff;
+import util.IntegrityFailedException;
 
 import java.io.*;
 import java.net.*;
@@ -31,7 +32,7 @@ public class SafeDatagramSocket {
         
         this.datagramSocket = new DatagramSocket();
         
-        readProperties(addr, config, password, Cipher.DECRYPT_MODE);
+        readProperties(addr, config, password, Cipher.ENCRYPT_MODE);
     }
 
     public SafeDatagramSocket(InetSocketAddress addr, String boxConfig, String password) throws IOException {
@@ -43,7 +44,7 @@ public class SafeDatagramSocket {
         else 
             this.datagramSocket = new DatagramSocket();
 
-        readProperties(addr, boxConfig, password, Cipher.ENCRYPT_MODE);
+        readProperties(addr, boxConfig, password, Cipher.DECRYPT_MODE);
     }
 
     private void readProperties(SocketAddress addr, String boxConfig, String password, int cipherMode)
@@ -139,8 +140,12 @@ public class SafeDatagramSocket {
         byte[] movieData, data = p.getData();
 
         int size = p.getLength();
-
-        movieData = CryptoStuff.decrypt(data, size, cipher, properties);
+        
+        try {
+            movieData = CryptoStuff.decrypt(data, size, cipher, properties);
+        } catch (IntegrityFailedException e) {
+            return null;
+        }
 
         p.setData(movieData);
         p.setLength(movieData.length);

@@ -25,16 +25,12 @@ public class hjStreamServer {
 		int count = -1;
 		long time;
 		DataInputStream g = (new DecryptMovie(args[0], args[1], args[5]).getDataInputStream());
-		// new DataInputStream( new FileInputStream(args[0]) );
-		// (new DecryptMovie(args[0], args[1], args[5]).getDataInputStream());
 
 		byte[] buff = new byte[4 * 1024];
 
-		InetSocketAddress addr = new InetSocketAddress( args[2], Integer.parseInt(args[3]));
+		SocketAddress addr = new InetSocketAddress( args[2], Integer.parseInt(args[3]));
 
 		SafeDatagramSocket s = new SafeDatagramSocket(addr, args[4], args[5]);
-		/*SafeMulticastSocket mS = new SafeMulticastSocket(Integer.parseInt(args[3]), addr, args[4], ConfigReader.SERVER);
-		mS.joinGroup(InetAddress.getByName(args[2]));*/
 
 		DatagramPacket p = new DatagramPacket(buff, buff.length, addr);
 		long t0 = System.nanoTime(), q0 = 0, afs = 0;
@@ -56,7 +52,6 @@ public class hjStreamServer {
 
 			// send packet (with a frame payload)
 			s.send(p);
-			/*mS.send(p);*/
 		}
 		double totalTime = (double)(System.nanoTime()-t0)/1000000000;
 

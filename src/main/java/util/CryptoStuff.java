@@ -85,7 +85,7 @@ public class CryptoStuff {
         return cipherText;
     }
 
-    public static byte[] decrypt(byte[] data, int size, Cipher cipher, Properties props) throws IOException {
+    public static byte[] decrypt(byte[] data, int size, Cipher cipher, Properties props) throws IOException, IntegrityFailedException {
         Security.addProvider(new BouncyCastlePQCProvider());
 
         String integrity = checkProperty(props, INTEGRITY);
@@ -120,7 +120,7 @@ public class CryptoStuff {
                     if (MessageDigest.isEqual(hash.digest(), messageIntegrity)) {
                         System.arraycopy(decryptedData, 0, realData, 0, messageLength);
                     } else { // Não mandar o packet! Integrity check failed!
-                        throw new IOException("Integrity check failed!");
+                        throw new IntegrityFailedException("Invalid integrity! Integrity check failed!");
                     }
                 } else {
                     Mac hMac = Mac.getInstance(mackey);
@@ -139,7 +139,7 @@ public class CryptoStuff {
                     if (MessageDigest.isEqual(hMac.doFinal(), messageIntegrity)) {
                         System.arraycopy(decryptedData, 0, realData, 0, messageLength);
                     } else { // Não mandar o packet! Integrity check failed!
-                        throw new IOException("Integrity check failed!");
+                        throw new IntegrityFailedException("Invalid integrity! Integrity check failed!");
                     }
                 }
             } else
