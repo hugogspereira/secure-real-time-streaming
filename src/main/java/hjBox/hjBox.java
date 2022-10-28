@@ -41,6 +41,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.io.InputStream;
+
+import socket.DatagramSocketCreator;
 import socket.SafeDatagramSocket;
 import crypto.PBEFileDecryption;
 
@@ -61,14 +63,7 @@ public class hjBox {
         InetSocketAddress inSocketAddress = parseSocketAddress(remote);
         Set<SocketAddress> outSocketAddressSet = Arrays.stream(destinations.split(",")).map(s -> parseSocketAddress(s)).collect(Collectors.toSet());
 
-        DatagramSocket inSocket;
-        if(inSocketAddress.getAddress().isMulticastAddress()){
-            MulticastSocket inSocketTemp = new MulticastSocket(inSocketAddress.getPort());
-            inSocketTemp.joinGroup(inSocketAddress, null);
-            inSocket = inSocketTemp;
-        } else {
-            inSocket = new DatagramSocket(inSocketAddress);
-        }
+        DatagramSocket inSocket = DatagramSocketCreator.create(inSocketAddress);
         SafeDatagramSocket outSocket = new SafeDatagramSocket(inSocketAddress, args[1], args[2]);
         byte[] buffer = new byte[5 * 1024];
 
@@ -80,7 +75,8 @@ public class hjBox {
                 movieName = new String(Arrays.copyOfRange(inPacket.getData(), 0, inPacket.getLength()),StandardCharsets.UTF_8); t0 = System.nanoTime(); continue;
             } else if(inPacket.getLength() == 1) { break; }
 
-            p = outSocket.decrypt(new DatagramPacket(inPacket.getData(), inPacket.getLength(), parseSocketAddress(SafeDatagramSocket.DEFAULT_ADDRESS)));
+            p = outSocket.decrypt(new DatagramPacket(inPacket.getData(), inPacket.getLength(), parseSocketAddress(DEFAULT_ADDRESS)));
+            if(p == null) { continue; }
             for (SocketAddress outSocketAddress : outSocketAddressSet) {
                 outSocket.send(p, outSocketAddress);
             }

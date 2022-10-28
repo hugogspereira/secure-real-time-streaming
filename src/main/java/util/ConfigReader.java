@@ -7,9 +7,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
-import java.io.FileOutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Scanner;
 
 
@@ -32,11 +29,10 @@ public class ConfigReader {
             }
             String aux = new StringBuilder(target).insert(0, "<").append(">").toString();
             int index = lines.indexOf(aux);
-            if(index == -1)
+            if(index == -1){
+                scan.close();
                 throw new Exception("target not found");
-            
-            String[] temp = path.split("/");
-            String filename = temp[temp.length-1].split("\\.")[0] + ".properties";
+            }
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
             boolean finished = false;
@@ -56,7 +52,7 @@ public class ConfigReader {
                 }
             }
             byteArrayOutputStream.close();
-
+            scan.close();
             return byteArrayOutputStream;
         }
         catch (Exception e) {

@@ -26,7 +26,7 @@ public class hjStreamServer {
 
 		byte[] buff = new byte[4 * 1024];
 
-		InetSocketAddress addr = new InetSocketAddress( args[2], Integer.parseInt(args[3]));
+		SocketAddress addr = new InetSocketAddress( args[2], Integer.parseInt(args[3]));
 
 		SafeDatagramSocket s = new SafeDatagramSocket(addr, args[4], args[5]);
 
