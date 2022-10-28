@@ -1,9 +1,0 @@
-util/ConfigReader.class
-util/MovieDecriptor.class
-socket/SafeDatagramSocket.class
-crypto/EncryptMovie.class
-hjBox/hjBox.class
-crypto/DecryptMovie.class
-crypto/PBEFileEncryption.class
-hjStreamServer/hjStreamServer.class
-crypto/PBEFileDecryption.class

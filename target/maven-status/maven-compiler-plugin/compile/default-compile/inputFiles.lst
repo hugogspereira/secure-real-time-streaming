@@ -1,9 +1,0 @@
-/home/hp/SCC/SRSC-Proj1v3_v2/src/main/java/crypto/DecryptMovie.java
-/home/hp/SCC/SRSC-Proj1v3_v2/src/main/java/util/ConfigReader.java
-/home/hp/SCC/SRSC-Proj1v3_v2/src/main/java/util/MovieDecriptor.java
-/home/hp/SCC/SRSC-Proj1v3_v2/src/main/java/hjStreamServer/hjStreamServer.java
-/home/hp/SCC/SRSC-Proj1v3_v2/src/main/java/crypto/EncryptMovie.java
-/home/hp/SCC/SRSC-Proj1v3_v2/src/main/java/crypto/PBEFileDecryption.java
-/home/hp/SCC/SRSC-Proj1v3_v2/src/main/java/crypto/PBEFileEncryption.java
-/home/hp/SCC/SRSC-Proj1v3_v2/src/main/java/hjBox/hjBox.java
-/home/hp/SCC/SRSC-Proj1v3_v2/src/main/java/socket/SafeDatagramSocket.java
