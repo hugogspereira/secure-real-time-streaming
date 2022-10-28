@@ -3,17 +3,10 @@ package util;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
-
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.Security;
+import java.security.*;
 import java.util.Properties;
 import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
 
 public class CryptoStuff {
 
@@ -39,7 +32,6 @@ public class CryptoStuff {
         byte[] cipherText, integrityData;
 
         try {
-
             if (mode != null && mode.equalsIgnoreCase("GCM")
                     || transformation[0].equalsIgnoreCase("ChaCha20-Poly1305")) {
                 return cipher.doFinal(data);
@@ -166,7 +158,6 @@ public class CryptoStuff {
         Security.addProvider(new BouncyCastlePQCProvider());
 
         try {
-
             if (ciphersuit == null) {
                 throw new IOException("Ciphersuite is invalid");
             }
@@ -189,9 +180,6 @@ public class CryptoStuff {
             throw new IOException("Encript/Decript data has failed! No such algorithm exception", e);
         } catch (NoSuchPaddingException e) {
             throw new IOException("Encript/Decript data has failed! No such padding exception", e);
-            // } catch (NoSuchProviderException e) {
-            // throw new IOException("Encript/Decript data has failed! No such provider
-            // exception");
         } catch (InvalidKeyException e) {
             throw new IOException("Encript/Decript data has failed! Invalid key exception", e);
         } catch (InvalidAlgorithmParameterException e) {

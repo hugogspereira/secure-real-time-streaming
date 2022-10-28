@@ -38,7 +38,21 @@ Adversary model and typology of threats for which you must implement countermeas
 
 - We only consider attacks against the communication channels
 - We will consider that the endpoints (principals) and runtime environments for Streaming Server, Box and Media Player used tool are trusted components (in the TCB)
-- We will consider that the runtime stack (including JAVA-JVM/OS/frmware and hardware in use computers) is trustable
+- We will consider that the runtime stack (including JAVA-JVM/OS/firmware and hardware in use computers) is trustable
 - We will consider that the the JAVA runtime framework (JRE) is trustable
 - We will consider that the cryptographic mechanisms are based on secure crypto algorithms (we can select/configure for their operation) and we consider that they are provided by trustable cryptographic providers in the JCA/JCE runtime support
 - We will consider that the Java development environment and used tools, are trustable
+
+## Run/Debug Configurations
+
+HjStreamServer:
+- HjStreamServer "movie" "movies-config" "ip-multicast-address" "port" "box-config" "password"
+
+HjBox:
+- HjBox "config" "box-config" "password"
+
+EncryptMovies:
+- EncryptMovies "movie" "movies-config"
+
+PBEFileEncryption:
+- PBEFileEncryption "config" "password"

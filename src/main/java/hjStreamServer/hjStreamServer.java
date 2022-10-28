@@ -7,8 +7,6 @@ package hjStreamServer;
 
 import crypto.DecryptMovie;
 import socket.SafeDatagramSocket;
-import util.PrintStats;
-
 import java.io.DataInputStream;
 import java.net.*;
 
@@ -21,8 +19,7 @@ public class hjStreamServer {
 	           	System.exit(-1);
 		}
 
-		int size;
-		int count = -1;
+		int size, count = -1;
 		long time;
 		DataInputStream g = (new DecryptMovie(args[0], args[1], args[5]).getDataInputStream());
 
@@ -53,11 +50,8 @@ public class hjStreamServer {
 			// send packet (with a frame payload)
 			s.send(p);
 		}
-		double totalTime = (double)(System.nanoTime()-t0)/1000000000;
-
+		s.printServerConfigStatus(count, afs, (double)(System.nanoTime()-t0)/1000000000);
 		s.send(new DatagramPacket(SafeDatagramSocket.CONTROL_MESSAGE, SafeDatagramSocket.CONTROL_MESSAGE.length, addr));
-		s.printServerConfigStatus();
-		PrintStats.toPrintServerStats(count, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs/totalTime);
 	}
 
 }
