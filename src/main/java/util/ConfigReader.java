@@ -20,7 +20,6 @@ public class ConfigReader {
     //path - localizacao do ficheiro que vamos ler
     //target - elemento que estamos a procurar
     public static ByteArrayOutputStream read(String path, String target, String password) throws Exception {
-        System.out.println(path+ "\n "+ target);
         try {
             InputStream stream = new ByteArrayInputStream(PBEFileDecryption.decryptFiles(password, path).toByteArray());
             Scanner scan = new Scanner(stream);

@@ -9,6 +9,7 @@ import crypto.DecryptMovie;
 import socket.SafeDatagramSocket;
 import java.io.DataInputStream;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 
 public class hjStreamServer {
 
@@ -33,7 +34,7 @@ public class hjStreamServer {
 		long t0 = System.nanoTime(), q0 = 0, afs = 0;
 
 		while ( g.available() > 0 ) {
-			if(count == -1) { s.send(new DatagramPacket(SafeDatagramSocket.CONTROL_MESSAGE, SafeDatagramSocket.CONTROL_MESSAGE.length, addr)); count++; continue; }
+			if(count == -1) { s.send(new DatagramPacket(args[0].getBytes(StandardCharsets.UTF_8), args[0].getBytes(StandardCharsets.UTF_8).length, addr)); count++; continue; }
 			size = g.readShort();
 			time = g.readLong();
 			if ( count == 0 ) q0 = time;
@@ -50,7 +51,7 @@ public class hjStreamServer {
 			// send packet (with a frame payload)
 			s.send(p);
 		}
-		s.printServerConfigStatus(count, afs, (double)(System.nanoTime()-t0)/1000000000);
+		s.printServerConfigStatus(args[0], count, afs, (double)(System.nanoTime()-t0)/1000000000);
 		s.send(new DatagramPacket(SafeDatagramSocket.CONTROL_MESSAGE, SafeDatagramSocket.CONTROL_MESSAGE.length, addr));
 	}
 

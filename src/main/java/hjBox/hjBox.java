@@ -35,6 +35,7 @@ package hjBox;
 
 import java.io.ByteArrayInputStream;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.Set;
@@ -66,23 +67,22 @@ public class hjBox {
         SafeDatagramSocket outSocket = new SafeDatagramSocket(inSocketAddress, args[1], args[2]);
         byte[] buffer = new byte[5 * 1024];
 
-        DatagramPacket p, inPacket; int count = 0; long afs = 0, t0 = -1;
+        DatagramPacket p, inPacket; int count = 0; long afs = 0, t0 = -1; String movieName = "";
         while (true) {
             inPacket = new DatagramPacket(buffer, buffer.length);
  	        inSocket.receive(inPacket);  // if remote is unicast
             if(t0 == -1) {
-                if(inPacket.getLength() == 1) { t0 = System.nanoTime(); } continue;
-            }
-            else if(inPacket.getLength() == 1) { break; }
+                movieName = new String(Arrays.copyOfRange(inPacket.getData(), 0, inPacket.getLength()),StandardCharsets.UTF_8); t0 = System.nanoTime(); continue;
+            } else if(inPacket.getLength() == 1) { break; }
 
-            p = outSocket.decrypt(new DatagramPacket(inPacket.getData(), inPacket.getLength(), parseSocketAddress(DEFAULT_ADDRESS)));
+            p = outSocket.decrypt(new DatagramPacket(inPacket.getData(), inPacket.getLength(), parseSocketAddress(SafeDatagramSocket.DEFAULT_ADDRESS)));
             if(p == null) { continue; }
             for (SocketAddress outSocketAddress : outSocketAddressSet) {
                 outSocket.send(p, outSocketAddress);
             }
             count += 1; afs += inPacket.getLength();
         }
-        outSocket.printBoxConfigStatus(count, afs, (double)(System.nanoTime()-t0)/1000000000);
+        outSocket.printBoxConfigStatus(movieName, count, afs, (double)(System.nanoTime()-t0)/1000000000);
     }
 
     private static InetSocketAddress parseSocketAddress(String socketAddress) {

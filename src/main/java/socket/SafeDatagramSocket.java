@@ -161,21 +161,21 @@ public class SafeDatagramSocket {
         datagramSocket.send(p);
     }
 
-    public void printBoxConfigStatus(int count, long afs, double totalTime) {
+    public void printBoxConfigStatus(String movieName, int count, long afs, double totalTime) {
         String boxKey = checkProperty(properties, KEY);
         String boxIntegrity = checkProperty(properties, INTEGRITY);
         if (boxIntegrity == null)
             boxIntegrity = checkProperty(properties, MACKEY);
-        PrintStats.toPrintBoxConfigStats(addr, checkProperty(properties, CIPHERSUITE), boxKey, boxKey.length(), boxIntegrity);
+        PrintStats.toPrintBoxConfigStats(movieName, checkProperty(properties, CIPHERSUITE), boxKey, boxKey.length(), boxIntegrity);
         PrintStats.toPrintBoxStats(count, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs*1000/totalTime);
     }
 
-    public void printServerConfigStatus(int count, long afs, double totalTime) {
+    public void printServerConfigStatus(String movieName, int count, long afs, double totalTime) {
         String boxKey = checkProperty(properties, KEY);
         String boxIntegrity = checkProperty(properties, INTEGRITY);
         if (boxIntegrity == null)
             boxIntegrity = checkProperty(properties, MACKEY);
-        PrintStats.toPrintServerConfigStats(addr, checkProperty(properties, CIPHERSUITE), boxKey, boxKey.length(), boxIntegrity);
+        PrintStats.toPrintServerConfigStats(movieName, checkProperty(properties, CIPHERSUITE), boxKey, boxKey.length(), boxIntegrity);
         PrintStats.toPrintServerStats(count, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs*1000/totalTime);
     }
 
