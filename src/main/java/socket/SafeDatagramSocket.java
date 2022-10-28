@@ -175,8 +175,8 @@ public class SafeDatagramSocket {
         String boxIntegrity = checkProperty(properties, INTEGRITY);
         if (boxIntegrity == null)
             boxIntegrity = checkProperty(properties, MACKEY);
-        PrintStats.toPrintServerConfigStats(addr, checkProperty(properties, CIPHERSUITE), boxKey, boxKey.length(), boxIntegrity);
-        PrintStats.toPrintServerStats(movieName, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs*1000/totalTime);
+        PrintStats.toPrintServerConfigStats(movieName, checkProperty(properties, CIPHERSUITE), boxKey, boxKey.length(), boxIntegrity);
+        PrintStats.toPrintServerStats(count, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs*1000/totalTime);
     }
 
 }

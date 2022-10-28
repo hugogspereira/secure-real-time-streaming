@@ -75,7 +75,7 @@ public class hjBox {
                 movieName = new String(Arrays.copyOfRange(inPacket.getData(), 0, inPacket.getLength()),StandardCharsets.UTF_8); t0 = System.nanoTime(); continue;
             } else if(inPacket.getLength() == 1) { break; }
 
-            p = outSocket.decrypt(new DatagramPacket(inPacket.getData(), inPacket.getLength(), parseSocketAddress(DEFAULT_ADDRESS)));
+            p = outSocket.decrypt(new DatagramPacket(inPacket.getData(), inPacket.getLength(), parseSocketAddress(SafeDatagramSocket.DEFAULT_ADDRESS)));
             if(p == null) { continue; }
             for (SocketAddress outSocketAddress : outSocketAddressSet) {
                 outSocket.send(p, outSocketAddress);
