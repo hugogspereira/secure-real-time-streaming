@@ -51,8 +51,8 @@ HjStreamServer:
 HjBox:
 - HjBox "config" "box-config" "password"
 
-EncryptMovies:
+EncryptMovies: (If you want to encrypt the movie with different configs, run this with the corresponding "movie-config")
 - EncryptMovies "movie" "movies-config"
 
-PBEFileEncryption:
+PBEFileEncryption: (If you want to encrypt the configs file with a given password, run this with the corresponding "password")
 - PBEFileEncryption "config" "password"
