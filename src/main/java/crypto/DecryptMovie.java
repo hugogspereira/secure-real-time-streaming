@@ -41,26 +41,7 @@ public class DecryptMovie {
 			properties = new Properties();
 			properties.load(inStream);
 
-			String movieCiphersuite, movieKey, movieIv;
-			movieCiphersuite = checkProperty(properties, CIPHERSUITE);
-			movieKey = checkProperty(properties, KEY);
-			movieIv = checkProperty(properties, IV);
-
-			if (movieCiphersuite == null) {
-				throw new IOException("Ciphersuite is invalid");
-			}
-			Cipher cipher = Cipher.getInstance(movieCiphersuite);
-			if (movieIv == null) {
-				throw new IOException("Iv is invalid");
-			}
-			IvParameterSpec ivSpec = new IvParameterSpec(movieIv.getBytes());
-			if (movieKey == null) {
-				throw new IOException("Key is invalid");
-			}
-			SecretKeySpec secretKey = new SecretKeySpec(movieKey.getBytes(), movieCiphersuite.split("/")[0]);
-			cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
-
-			movieData = CryptoStuff.decrypt(data, data.length, cipher, properties);
+			movieData = CryptoStuff.decrypt(data, data.length, properties);
 
 		} catch (NoSuchAlgorithmException e) {
 			throw new IOException("Receive Encrypted data has failed! No such algorithm exception", e);
@@ -76,14 +57,6 @@ public class DecryptMovie {
 			throw new IOException("Receive Encrypted data has failed! Invalid algorithm parameter exception", e);
 		}
 		this.dataInputStream = new ByteArrayInputStream(movieData);
-	}
-
-	private String checkProperty(Properties properties, String property) {
-		String res = properties.getProperty(property);
-		if (res.equalsIgnoreCase("NULL")) {
-			res = null;
-		}
-		return res;
 	}
 
 	public DataInputStream getDataInputStream() {
