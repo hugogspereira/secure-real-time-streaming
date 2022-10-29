@@ -86,13 +86,15 @@ public class SafeDatagramSocket {
                 }
             }
             IvParameterSpec ivSpec = new IvParameterSpec(boxIv.getBytes());
-
             if (boxKey == null) {
                 throw new IOException("Key is invalid");
             }
             SecretKey secretKey = new SecretKeySpec(boxKey.getBytes(), 0, boxKey.getBytes().length,
                     boxCiphersuite.split("/")[0]);
-            cipher.init(cipherMode, secretKey, ivSpec);
+            if(cipher.getAlgorithm().equals("ARCFOUR"))
+                cipher.init(cipherMode, secretKey);
+            else
+                cipher.init(cipherMode, secretKey, ivSpec);
 
             this.addr = addr.toString();
 
