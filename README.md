@@ -39,7 +39,7 @@ Adversary model and typology of threats for which you must implement countermeas
 - We only consider attacks against the communication channels
 - We will consider that the endpoints (principals) and runtime environments for Streaming Server, Box and Media Player used tool are trusted components (in the TCB)
 - We will consider that the runtime stack (including JAVA-JVM/OS/firmware and hardware in use computers) is trustable
-- We will consider that the JAVA runtime framework (JRE) is trustable
+- We will consider that the the JAVA runtime framework (JRE) is trustable
 - We will consider that the cryptographic mechanisms are based on secure crypto algorithms (we can select/configure for their operation) and we consider that they are provided by trustable cryptographic providers in the JCA/JCE runtime support
 - We will consider that the Java development environment and used tools, are trustable
 
@@ -52,7 +52,14 @@ HjBox:
 - HjBox "config" "box-config" "password"
 
 EncryptMovies: (If you want to encrypt the movie with different configs, run this with the corresponding "movie-config")<br />
-- EncryptMovies "movie" "movies-config"
+- EncryptMovies "movie" "movies-config" "password"
 
 PBEFileEncryption: (If you want to encrypt the configs file with a given password, run this with the corresponding "password")<br />
 - PBEFileEncryption "config" "password"
+
+# Additional Information
+
+To run this program it is not necessary to have the configuration files in clear. Therefore, the project works properly WITHOUT these being available!
+However, it was decided to put them in the repo so that the Professor could test things out.
+
+Also, the password used to encrypt and decrypt the files was: "omsqptaesdfommptvsnfiocmlesrfoqppms".

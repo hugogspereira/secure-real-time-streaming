@@ -50,25 +50,6 @@ public class EncryptMovie {
 			Properties properties = new Properties();
 			properties.load(inputStream);
 
-			String movieCiphersuite, movieKey, movieIv;
-			movieCiphersuite = checkProperty(properties, CIPHERSUITE);
-			movieKey = checkProperty(properties, KEY);
-			movieIv = checkProperty(properties, IV);
-
-			if (movieCiphersuite == null) {
-				throw new Exception("Ciphersuite is invalid");
-			}
-			Cipher cipher = Cipher.getInstance(movieCiphersuite);
-			if (movieIv == null) {
-				throw new Exception("Iv is invalid");
-			}
-			IvParameterSpec ivSpec = new IvParameterSpec(movieIv.getBytes());
-			if (movieKey == null) {
-				throw new Exception("Key is invalid");
-			}
-			SecretKeySpec secretKey = new SecretKeySpec(movieKey.getBytes(), movieCiphersuite.split("/")[0]);
-			cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
-
 			String[] fullPath = fullMovieName.split(".encrypted");
 			File inputFile = new File(fullPath[0]);
 			inputStream = new FileInputStream(inputFile);
@@ -80,7 +61,7 @@ public class EncryptMovie {
 
 			int size = inputBytes.length;
 
-			byte[] cipherText = CryptoStuff.encrypt(inputBytes, size, cipher, properties);
+			byte[] cipherText = CryptoStuff.encrypt(inputBytes, size, properties);
 
 			FileOutputStream outputStream = new FileOutputStream(encryptedFile);
 			outputStream.write(cipherText);

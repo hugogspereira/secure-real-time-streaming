@@ -25,14 +25,13 @@ public class SafeDatagramSocket {
     public static final String DEFAULT_ADDRESS = "0.0.0.0:0000";
 
     private String addr;
-    private Cipher cipher;
     Properties properties;
     private DatagramSocket datagramSocket;
 
     public SafeDatagramSocket(SocketAddress addr, String config, String password) throws IOException {
         this.datagramSocket = new DatagramSocket();
         
-        readProperties(addr, config, password, Cipher.ENCRYPT_MODE);
+        readProperties(addr, config, password);
     }
 
     public SafeDatagramSocket(InetSocketAddress addr, String boxConfig, String password) throws IOException {
@@ -44,10 +43,10 @@ public class SafeDatagramSocket {
         else 
             this.datagramSocket = new DatagramSocket();
 
-        readProperties(addr, boxConfig, password, Cipher.DECRYPT_MODE);
+        readProperties(addr, boxConfig, password);
     }
 
-    private void readProperties(SocketAddress addr, String boxConfig, String password, int cipherMode)
+    private void readProperties(SocketAddress addr, String boxConfig, String password)
             throws IOException {
         Security.addProvider(new BouncyCastleProvider());
 
@@ -61,55 +60,8 @@ public class SafeDatagramSocket {
             properties = new Properties();
             properties.load(inputStream);
 
-            String boxCiphersuite = checkProperty(properties, CIPHERSUITE);
-            this.cipher = Cipher.getInstance(boxCiphersuite);
-            String boxKey = checkProperty(properties, KEY);
-            String boxIv = checkProperty(properties, IV);
-            String boxMackey = checkProperty(properties, MACKEY);
-
-            if (boxCiphersuite == null) {
-                throw new IOException("Ciphersuite is invalid");
-            }
-            String[] transformation = boxCiphersuite.split("/");
-            String mode = null;
-            if (transformation.length > 1) {
-                mode = transformation[1];
-            }
-            if (boxIv == null) {
-                throw new IOException("Iv is invalid");
-            }
-            if (mode != null && mode.equalsIgnoreCase("CCM")) {
-                if (boxIv.getBytes().length < 7 || boxIv.getBytes().length > 13) {
-                    throw new IOException("With CCM mode the iv should be between 7 and 13 bytes");
-                } else if (boxMackey == null) {
-                    throw new IOException("With CCM mode the mac is necessary");
-                }
-            }
-            IvParameterSpec ivSpec = new IvParameterSpec(boxIv.getBytes());
-
-            if (boxKey == null) {
-                throw new IOException("Key is invalid");
-            }
-            SecretKey secretKey = new SecretKeySpec(boxKey.getBytes(), 0, boxKey.getBytes().length,
-                    boxCiphersuite.split("/")[0]);
-            cipher.init(cipherMode, secretKey, ivSpec);
-
             this.addr = addr.toString();
 
-        } catch (NoSuchAlgorithmException e) {
-            throw new IOException("Send Encrypted data has failed! No such algorithm exception", e);
-        } catch (InvalidKeyException e) {
-            throw new IOException("Send Encrypted data has failed! Invalid key exception", e);
-        } catch (InvalidAlgorithmParameterException e) {
-            throw new IOException("Send Encrypted data has failed! Invalid algorithm parameter exception", e);
-        } catch (IllegalBlockSizeException e) {
-            throw new IOException("Send Encrypted data has failed! Illegal block size exception", e);
-        } catch (BadPaddingException e) {
-            throw new IOException("Send Encrypted data has failed! Bad padding exception", e);
-        } catch (ShortBufferException e) {
-            throw new IOException("Send Encrypted data has failed! Short buffer exception", e);
-        } catch (NoSuchPaddingException e) {
-            throw new IOException("Send Encrypted data has failed! No such padding exception", e);
         } catch (Exception e) {
             throw new IOException(e);
         }
@@ -127,7 +79,7 @@ public class SafeDatagramSocket {
         byte[] data = p.getData();
 
         int size = data.length;
-        byte[] cipherText = CryptoStuff.encrypt(data, size, cipher, properties);
+        byte[] cipherText = CryptoStuff.encrypt(data, size, properties);
 
         p.setData(cipherText);
         p.setLength(cipherText.length);
@@ -141,7 +93,7 @@ public class SafeDatagramSocket {
         int size = p.getLength();
         
         try {
-            movieData = CryptoStuff.decrypt(data, size, cipher, properties);
+            movieData = CryptoStuff.decrypt(data, size, properties);
         } catch (IntegrityFailedException e) {
             return null;
         }

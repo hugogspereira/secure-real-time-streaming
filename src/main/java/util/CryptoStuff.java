@@ -16,28 +16,55 @@ public class CryptoStuff {
     private static final String INTEGRITY = "INTEGRITY";
     private static final String MACKEY = "MACKEY";
 
-    public static byte[] encrypt(byte[] data, int size, Cipher cipher, Properties props) throws IOException {
+    public static byte[] encrypt(byte[] data, int size, Properties props) throws IOException {
         Security.addProvider(new BouncyCastlePQCProvider());
 
         String integrity = checkProperty(props, INTEGRITY);
         String mackey = checkProperty(props, MACKEY);
         String ciphersuite = checkProperty(props, CIPHERSUITE);
-        String[] transformation = ciphersuite.split("/");
-        String mode = null;
-        if (transformation.length > 1) {
-            mode = transformation[1];
-        }
+        String key = checkProperty(props, KEY);
+        String iv = checkProperty(props, IV);
 
         int integritySize, ctLength;
         byte[] cipherText, integrityData;
 
         try {
+            Cipher cipher = Cipher.getInstance(ciphersuite);
+            if (ciphersuite == null) {
+                throw new IOException("Ciphersuite is invalid");
+            }
+            String[] transformation = ciphersuite.split("/");
+            String mode = null;
+            if (transformation.length > 1) {
+                mode = transformation[1];
+            }
+            if (iv == null) {
+                throw new IOException("Iv is invalid");
+            }
+            if (mode != null && mode.equalsIgnoreCase("CCM")) {
+                if (iv.getBytes().length < 7 || iv.getBytes().length > 13) {
+                    throw new IOException("With CCM mode the iv should be between 7 and 13 bytes");
+                } else if (mackey == null) {
+                    throw new IOException("With CCM mode the mac is necessary");
+                }
+            }
+            IvParameterSpec ivSpec = new IvParameterSpec(iv.getBytes());
+            if (key == null) {
+                throw new IOException("Key is invalid");
+            }
+            SecretKey secretKey = new SecretKeySpec(key.getBytes(), 0, key.getBytes().length,
+                    ciphersuite.split("/")[0]);
+            if(cipher.getAlgorithm().equals("ARCFOUR"))
+                cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+            else
+                cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
+
             if (mode != null && mode.equalsIgnoreCase("GCM")
                     || transformation[0].equalsIgnoreCase("ChaCha20-Poly1305")) {
                 return cipher.doFinal(data);
             }
-            if (integrity != null || mackey != null) {
-                if (integrity != null) {
+            if (integrity != null) {
+                if (mackey == null) {
                     MessageDigest hash = MessageDigest.getInstance(integrity);
                     integritySize = hash.getDigestLength();
 
@@ -47,7 +74,7 @@ public class CryptoStuff {
                     hash.update(data);
                     integrityData = hash.digest();
                 } else {
-                    Mac hMac = Mac.getInstance(mackey);
+                    Mac hMac = Mac.getInstance(integrity);
                     Key hMacKey = new SecretKeySpec(checkProperty(props, KEY).getBytes(), mackey);
                     hMac.init(hMacKey);
                     integritySize = hMac.getMacLength();
@@ -72,33 +99,65 @@ public class CryptoStuff {
             throw new IOException("Encript data has failed! Short Buffer Exception", e);
         } catch (InvalidKeyException e) {
             throw new IOException("Encript data has failed! Invalid Mac key Exeption", e);
+        } catch (NoSuchPaddingException e) {
+            throw new IOException("Send Encrypted data has failed! No such padding exception", e);
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new IOException("Send Encrypted data has failed! Invalid algorithm parameter exception", e);
         }
 
         return cipherText;
     }
 
-    public static byte[] decrypt(byte[] data, int size, Cipher cipher, Properties props) throws IOException, IntegrityFailedException {
+    public static byte[] decrypt(byte[] data, int size, Properties props) throws IOException, IntegrityFailedException {
         Security.addProvider(new BouncyCastlePQCProvider());
 
         String integrity = checkProperty(props, INTEGRITY);
         String mackey = checkProperty(props, MACKEY);
         String ciphersuite = checkProperty(props, CIPHERSUITE);
-        String[] transformation = ciphersuite.split("/");
-        String mode = null;
-        if (transformation.length > 1) {
-            mode = transformation[1];
-        }
+        String key = checkProperty(props, KEY);
+        String iv = checkProperty(props, IV);
+        
 
         byte[] decryptedData, messageIntegrity, realData;
         int messageLength;
 
         try {
+            Cipher cipher = Cipher.getInstance(ciphersuite);
+            if (ciphersuite == null) {
+                throw new IOException("Ciphersuite is invalid");
+            }
+            String[] transformation = ciphersuite.split("/");
+            String mode = null;
+            if (transformation.length > 1) {
+                mode = transformation[1];
+            }
+            if (iv == null) {
+                throw new IOException("Iv is invalid");
+            }
+            if (mode != null && mode.equalsIgnoreCase("CCM")) {
+                if (iv.getBytes().length < 7 || iv.getBytes().length > 13) {
+                    throw new IOException("With CCM mode the iv should be between 7 and 13 bytes");
+                } else if (mackey == null) {
+                    throw new IOException("With CCM mode the mac is necessary");
+                }
+            }
+            IvParameterSpec ivSpec = new IvParameterSpec(iv.getBytes());
+            if (key == null) {
+                throw new IOException("Key is invalid");
+            }
+            SecretKey secretKey = new SecretKeySpec(key.getBytes(), 0, key.getBytes().length,
+                    ciphersuite.split("/")[0]);
+            if(cipher.getAlgorithm().equals("ARCFOUR"))
+                cipher.init(Cipher.DECRYPT_MODE, secretKey);
+            else
+                cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+                
             if (mode != null && mode.equalsIgnoreCase("GCM")
                     || transformation[0].equalsIgnoreCase("ChaCha20-Poly1305")) {
                 return cipher.doFinal(data, 0, size);
             }
-            if (integrity != null || mackey != null) {
-                if (integrity != null) {
+            if (integrity != null) {
+                if (mackey == null) {
                     MessageDigest hash = MessageDigest.getInstance(integrity);
 
                     decryptedData = cipher.doFinal(data, 0, size);
@@ -115,7 +174,7 @@ public class CryptoStuff {
                         throw new IntegrityFailedException("Invalid integrity! Integrity check failed!");
                     }
                 } else {
-                    Mac hMac = Mac.getInstance(mackey);
+                    Mac hMac = Mac.getInstance(integrity);
                     Key hMacKey = new SecretKeySpec(checkProperty(props, KEY).getBytes(), mackey);
 
                     decryptedData = cipher.doFinal(data, 0, size);
@@ -147,6 +206,10 @@ public class CryptoStuff {
             throw new IOException("Receive Encrypted data has failed! Bad padding exception", e);
         } catch (IllegalBlockSizeException e) {
             throw new IOException("Receive Encrypted data has failed! Illegal block size exception", e);
+        } catch (NoSuchPaddingException e) {
+            throw new IOException("Send Encrypted data has failed! No such padding exception", e);
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new IOException("Send Encrypted data has failed! Invalid algorithm parameter exception", e);
         }
     }
 
@@ -195,4 +258,5 @@ public class CryptoStuff {
         }
         return res;
     }
+
 }
