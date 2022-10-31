@@ -63,8 +63,8 @@ public class CryptoStuff {
                     || transformation[0].equalsIgnoreCase("ChaCha20-Poly1305")) {
                 return cipher.doFinal(data);
             }
-            if (integrity != null || mackey != null) {
-                if (integrity != null) {
+            if (integrity != null) {
+                if (mackey == null) {
                     MessageDigest hash = MessageDigest.getInstance(integrity);
                     integritySize = hash.getDigestLength();
 
@@ -74,7 +74,7 @@ public class CryptoStuff {
                     hash.update(data);
                     integrityData = hash.digest();
                 } else {
-                    Mac hMac = Mac.getInstance(mackey);
+                    Mac hMac = Mac.getInstance(integrity);
                     Key hMacKey = new SecretKeySpec(checkProperty(props, KEY).getBytes(), mackey);
                     hMac.init(hMacKey);
                     integritySize = hMac.getMacLength();
@@ -156,8 +156,8 @@ public class CryptoStuff {
                     || transformation[0].equalsIgnoreCase("ChaCha20-Poly1305")) {
                 return cipher.doFinal(data, 0, size);
             }
-            if (integrity != null || mackey != null) {
-                if (integrity != null) {
+            if (integrity != null) {
+                if (mackey == null) {
                     MessageDigest hash = MessageDigest.getInstance(integrity);
 
                     decryptedData = cipher.doFinal(data, 0, size);
@@ -174,7 +174,7 @@ public class CryptoStuff {
                         throw new IntegrityFailedException("Invalid integrity! Integrity check failed!");
                     }
                 } else {
-                    Mac hMac = Mac.getInstance(mackey);
+                    Mac hMac = Mac.getInstance(integrity);
                     Key hMacKey = new SecretKeySpec(checkProperty(props, KEY).getBytes(), mackey);
 
                     decryptedData = cipher.doFinal(data, 0, size);
