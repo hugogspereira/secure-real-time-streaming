@@ -62,6 +62,6 @@ PBEFileEncryption:
 # Aditional Information
 
 To run this program it is not necessary to have the configuration files in clear. Therefore, the project works properly WITHOUT these being available!
-However, it was decided to put them in the repo so that the Professor could more easily test things out.
+However, it was decided to put them in the repo so that the Professor could test things out.
 
 Also, the password used to encrypt and decrypt the files was: "omsqptaesdfommptvsnfiocmlesrfoqppms".
