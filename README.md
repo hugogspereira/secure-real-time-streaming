@@ -51,8 +51,17 @@ HjStreamServer:
 HjBox:
 - HjBox "config" "box-config" "password"
 
-EncryptMovies: (If you want to encrypt the movie with different configs, run this with the corresponding "movie-config")
-- EncryptMovies "movie" "movies-config"
+EncryptMovies:
+- EncryptMovies "movie" "movies-config" "password"
+(If you want to encrypt the movie with different configs, run this with the corresponding "movie-config")
 
-PBEFileEncryption: (If you want to encrypt the configs file with a given password, run this with the corresponding "password")
+PBEFileEncryption:
 - PBEFileEncryption "config" "password"
+(If you want to encrypt the configs file with a given password, run this with the corresponding "password")
+
+# Aditional Information
+
+To run this program it is not necessary to have the configuration files in clear. Therefore, the project works properly WITHOUT these being available!
+However, it was decided to put them in the repo so that the Professor could more easily test things out.
+
+Also, the password used to encrypt and decrypt the files was: "omsqptaesdfommptvsnfiocmlesrfoqppms".
