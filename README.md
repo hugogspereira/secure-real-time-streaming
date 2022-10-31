@@ -6,7 +6,7 @@ This repo will be used to store the first project of Network and Computer System
 - [Assignment Information](http://vps726303.ovh.net/srsc/)
 
 
-In this project, we propose to design and implement a secure UDP channel to support real-time streaming based on a protocal usign cryptographic protection, supporting encrypted and integrity-controlled payloads of protected media frames encoding MPEG4 encoded movies.
+In this project, we propose to design and implement a secure UDP channel to support real-time streaming based on a protocol using cryptographic protection, supporting encrypted and integrity-controlled payloads of protected media frames encoding MPEG4 encoded movies.
 
 ## Base Components
 
@@ -39,7 +39,7 @@ Adversary model and typology of threats for which you must implement countermeas
 - We only consider attacks against the communication channels
 - We will consider that the endpoints (principals) and runtime environments for Streaming Server, Box and Media Player used tool are trusted components (in the TCB)
 - We will consider that the runtime stack (including JAVA-JVM/OS/firmware and hardware in use computers) is trustable
-- We will consider that the the JAVA runtime framework (JRE) is trustable
+- We will consider that the JAVA runtime framework (JRE) is trustable
 - We will consider that the cryptographic mechanisms are based on secure crypto algorithms (we can select/configure for their operation) and we consider that they are provided by trustable cryptographic providers in the JCA/JCE runtime support
 - We will consider that the Java development environment and used tools, are trustable
 
@@ -51,8 +51,8 @@ HjStreamServer:
 HjBox:
 - HjBox "config" "box-config" "password"
 
-EncryptMovies: (If you want to encrypt the movie with different configs, run this with the corresponding "movie-config")
+EncryptMovies: (If you want to encrypt the movie with different configs, run this with the corresponding "movie-config")<br />
 - EncryptMovies "movie" "movies-config"
 
-PBEFileEncryption: (If you want to encrypt the configs file with a given password, run this with the corresponding "password")
+PBEFileEncryption: (If you want to encrypt the configs file with a given password, run this with the corresponding "password")<br />
 - PBEFileEncryption "config" "password"
