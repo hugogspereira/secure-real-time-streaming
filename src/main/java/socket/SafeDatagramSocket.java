@@ -119,7 +119,7 @@ public class SafeDatagramSocket {
         if (boxIntegrity == null)
             boxIntegrity = checkProperty(properties, MACKEY);
         PrintStats.toPrintBoxConfigStats(movieName, checkProperty(properties, CIPHERSUITE), boxKey, boxKey.length(), boxIntegrity);
-        PrintStats.toPrintBoxStats(count, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs*1000/totalTime);
+        PrintStats.toPrintBoxStats(count, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs/totalTime/1000);
     }
 
     public void printServerConfigStatus(String movieName, int count, long afs, double totalTime) {
@@ -128,7 +128,7 @@ public class SafeDatagramSocket {
         if (boxIntegrity == null)
             boxIntegrity = checkProperty(properties, MACKEY);
         PrintStats.toPrintServerConfigStats(movieName, checkProperty(properties, CIPHERSUITE), boxKey, boxKey.length(), boxIntegrity);
-        PrintStats.toPrintServerStats(count, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs*1000/totalTime);
+        PrintStats.toPrintServerStats(count, (double)afs/count, afs, totalTime, (double)count/totalTime, (double)afs/totalTime/1000);
     }
 
 }
